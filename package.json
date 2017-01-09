@@ -11,14 +11,23 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "onCommand:extension.hungryDelete"
     ],
     "main": "./out/src/extension",
     "contributes": {
-        "commands": [{
-            "command": "extension.sayHello",
-            "title": "Hello World"
-        }]
+        "commands": [
+            {
+                "command": "extension.hungryDelete",
+                "title": "Hungry Delete"
+            }
+        ],
+        "keybindings": [
+            {
+                "key": "ctrl+backspace",
+                "command": "extension.hungryDelete",
+                "when": "editorTextFocus && !editorReadonly"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",

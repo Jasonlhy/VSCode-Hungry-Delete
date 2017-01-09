@@ -1,4 +1,5 @@
 'use strict';
+
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import {window, commands, ExtensionContext} from 'vscode';
@@ -14,24 +15,20 @@ export function activate(context: ExtensionContext) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = commands.registerCommand('extension.sayHello', () => {
-        // The code you place here will be executed every time your command is executed
-
-        // Display a message box to the user
+    let disposable = commands.registerCommand('extension.hungryDelete', () => {
+        
+        // This extension simpliy override the keybinding ctrl+backspace
         const editor = window.activeTextEditor;
         const position = editor.selection.active;
         const currentLine = editor.document.lineAt(position);
-        if (currentLine.isEmptyOrWhitespace){
-            console.log("Is empty");
+
+        if (currentLine.isEmptyOrWhitespace && position.line > 0){
             commands.executeCommand("deleteLines", null, null);
             commands.executeCommand("cursorUp", null, null);
             commands.executeCommand("cursorEnd", null, null);
         } else {
-            console.log("is not empty");
             commands.executeCommand("deleteWordLeft", null, null);
         }
-        
-        window.showInformationMessage('Hello World!');
     });
 
     context.subscriptions.push(disposable);
