@@ -2,7 +2,7 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import {window, commands, ExtensionContext} from 'vscode';
+import {window, commands, ExtensionContext, Position} from 'vscode';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -19,16 +19,28 @@ export function activate(context: ExtensionContext) {
         
         // This extension simpliy override the keybinding ctrl+backspace
         const editor = window.activeTextEditor;
-        const position = editor.selection.active;
-        const currentLine = editor.document.lineAt(position);
+        let position = editor.selection.active;
+        let currentLine = editor.document.lineAt(position);
 
-        if (currentLine.isEmptyOrWhitespace && position.line > 0){
+        // continue to eat all the whitespace
+        // until the line is not empty
+        let anyHungryDelete = false;
+        while (currentLine.isEmptyOrWhitespace && position.line > 0){
+            anyHungryDelete = true;
+
             commands.executeCommand("deleteLines", null, null);
-            commands.executeCommand("cursorUp", null, null);
+            commands.executeCommand("cursorUp", null, null);         
+
+            // It seems that editor.selection.active does not work
+            position = new Position(position.line - 1, 0);
+            currentLine = editor.document.lineAt(position);
+        } 
+
+        if (anyHungryDelete){
             commands.executeCommand("cursorEnd", null, null);
         } else {
             commands.executeCommand("deleteWordLeft", null, null);
-        }
+        }        
     });
 
     context.subscriptions.push(disposable);
