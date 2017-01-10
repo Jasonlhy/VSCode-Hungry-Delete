@@ -29,10 +29,6 @@ function backtraceAboveLine(doc: TextDocument, cursorLineNumber: number): Positi
     return startPosition;
 }
 
-function backtraceInLine(cursorLine: TextLine): Position {
-    return null;
-}
-
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
