@@ -46,16 +46,17 @@ function backtraceAboveLine(doc: TextDocument, cursorLineNumber: number): Positi
  * @returns {Position} first index of word or first index of continuous whitespaces or index of word Separator
  */
 function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition: Position): Position {
+    const text = cursorLine.text;
+    let charIndexBefore = cursorPosition.character - 1;
     let wordRange = doc.getWordRangeAtPosition(cursorPosition);
+    let wordRangeBefore = doc.getWordRangeAtPosition(new Position(cursorPosition.line, charIndexBefore));
 
     // the cursor is at within word, end of word
-    // but not at the start of word, to avoid ABC |CEF
-    if (wordRange && (wordRange.start.character != cursorPosition.character)) {
+    // use of wordRangeBefore is to avoid ABC |CEF and ONLY one word separator, e.g. "3!|" => "3"
+    if (wordRange && wordRangeBefore) {
         return wordRange.start;
     } else {
         // the cursor is at a whitespace
-        const text = cursorLine.text;
-        let charIndexBefore = cursorPosition.character - 1;
         let nonEmptyCharIndex = findFirstNonEmpty(text, charIndexBefore);
         let offset = charIndexBefore - nonEmptyCharIndex;
         let deleteWhiteSpaceOnly = (offset > 1);
@@ -65,14 +66,24 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
         } else {
             // delete a space with the entire word at left
             // in consistent to the exisiting implementation of "deleteWorldLeft"
-            // For edge case : If there is only ONE Word Seperator, e.g. @ or =  - its word range is undefined
             wordRange = doc.getWordRangeAtPosition(new Position(cursorPosition.line, nonEmptyCharIndex));
-            return (wordRange)
-                ? wordRange.start
-                : new Position(cursorPosition.line, nonEmptyCharIndex);
+            if (wordRange){
+                return wordRange.start;
+            } else {
+                // For edge case : If there is Word Seperator, e.g. @ or =  - its word range is undefined
+                // the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
+                const separatorChar = text.charAt(nonEmptyCharIndex);
+                const nonSeparatorIndex = findFirstNonSeparator(text, nonEmptyCharIndex - 1, separatorChar);
+            
+                if (nonSeparatorIndex < 0){
+                    return new Position(cursorPosition.line, 0);
+                } else {
+                    return new Position(cursorPosition.line, nonSeparatorIndex + 1);
+                }
+            }
         }
     }
-}
+    }
 
 /**
  * Find the non-empty character from backtracing at columnNumber
@@ -87,6 +98,27 @@ function findFirstNonEmpty(text: String, columnNumber: number): number {
         let isWhiteSpace = /\s/.test(c);
 
         if (!isWhiteSpace) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+
+/**
+ * Find the character that don't match with wordSeparator from backtracing at columnNumber
+ * 
+ * @param {String} text
+ * @param {number} columnNumber
+ * @param {String} wordSeparator
+ * @returns {number}
+ */
+function findFirstNonSeparator(text: String, columnNumber: number, wordSeparator : String): number {
+    for (let i = columnNumber; i >= 0; i--) {
+        let c = text.charAt(i);
+
+        if (c !== wordSeparator) {
             return i;
         }
     }
@@ -133,6 +165,9 @@ function findDeleteRange(doc: TextDocument, selection: Selection): Range {
  * @returns disposable to be registered in the context
  */
 function hungryDelete() {
+    // The command has been defined in the package.json file
+    // Now provide the implementation of the command with  registerCommand
+    // The commandId parameter must match the command field in package.json
     let disposable = commands.registerCommand('extension.hungryDelete', () => {
 
         /* Edior and doc */
@@ -146,29 +181,8 @@ function hungryDelete() {
         // it includs the startPosition but exclude the endPositon
         // This is in one transaction
         let result = editor.edit((editorBuilder) => {
-            deleteRanges.forEach(editorBuilder.delete);
-        });
-    });
-
-    return disposable;
-}
-
-function test() {
-    let disposable = commands.registerCommand('extension.hungryDelete', () => {
-
-        /* Edior and doc */
-        const editor = window.activeTextEditor;
-        const doc = editor.document;
-
-        const deleteRanges = editor.selections.map((selection) => {
-            return findDeleteRange(doc, selection);
-        });
-
-        let result = editor.edit((editorBuilder) => {
             deleteRanges.forEach((deleteRange) => {
-                if (deleteRange) {
-                    editorBuilder.delete(deleteRange);
-                }
+                 editorBuilder.delete(deleteRange);
             });
         });
     });
@@ -176,21 +190,14 @@ function test() {
     return disposable;
 }
 
-
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
-
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "hungry-delete" is now active!');
 
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with  registerCommand
-    // The commandId parameter must match the command field in package.json
-
-    // let disposable = hungryDelete();
-    let disposable = test();
+    let disposable = hungryDelete();
     context.subscriptions.push(disposable);
 }
 
