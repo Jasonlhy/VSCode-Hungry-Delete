@@ -2,10 +2,15 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { window, commands, ExtensionContext, Position, Range, TextDocument, TextLine } from 'vscode';
+import { window, commands, ExtensionContext, Position, Range, TextDocument, TextLine, Selection, languages } from 'vscode';
+
 
 /**
  * Back trace the first non-empty character position in the above line, used as start positon to be deleted
+ *
+ * @param {TextDocument} doc
+ * @param {number} cursorLineNumber
+ * @returns {Position} First non-empty character position in the above line
  */
 function backtraceAboveLine(doc: TextDocument, cursorLineNumber: number): Position {
     // backtrace the first non-empty character position
@@ -29,6 +34,149 @@ function backtraceAboveLine(doc: TextDocument, cursorLineNumber: number): Positi
     return startPosition;
 }
 
+
+/**
+ * Back trace the first index of word or first index of continuous whitespaces or index of word Separator, used as start positon to be deleted
+ * 
+ * This is used to perform a mock version of "deleteWorldLeft"
+ * 
+ * @param {TextDocument} doc
+ * @param {TextLine} cursorLine
+ * @param {Position} cursorPosition
+ * @returns {Position} first index of word or first index of continuous whitespaces or index of word Separator
+ */
+function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition: Position): Position {
+    let wordRange = doc.getWordRangeAtPosition(cursorPosition);
+
+    // the cursor is at within word, end of word
+    // but not at the start of word, to avoid ABC |CEF
+    if (wordRange && (wordRange.start.character != cursorPosition.character)) {
+        return wordRange.start;
+    } else {
+        // the cursor is at a whitespace
+        const text = cursorLine.text;
+        let charIndexBefore = cursorPosition.character - 1;
+        let nonEmptyCharIndex = findFirstNonEmpty(text, charIndexBefore);
+        let offset = charIndexBefore - nonEmptyCharIndex;
+        let deleteWhiteSpaceOnly = (offset > 1);
+
+        if (deleteWhiteSpaceOnly) {
+            return new Position(cursorPosition.line, nonEmptyCharIndex + 1);
+        } else {
+            // delete a space with the entire word at left
+            // in consistent to the exisiting implementation of "deleteWorldLeft"
+            // For edge case : If there is only ONE Word Seperator, e.g. @ or =  - its word range is undefined
+            wordRange = doc.getWordRangeAtPosition(new Position(cursorPosition.line, nonEmptyCharIndex));
+            return (wordRange)
+                ? wordRange.start
+                : new Position(cursorPosition.line, nonEmptyCharIndex);
+        }
+    }
+}
+
+/**
+ * Find the non-empty character from backtracing at columnNumber
+ * 
+ * @param {String} text
+ * @param {number} columnNumber
+ * @returns {number}
+ */
+function findFirstNonEmpty(text: String, columnNumber: number): number {
+    for (let i = columnNumber; i >= 0; i--) {
+        let c = text.charAt(i);
+        let isWhiteSpace = /\s/.test(c);
+
+        if (!isWhiteSpace) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * Find the range to be deleted with backtracing the start position from a cursor positoin
+ *
+ * @param {TextDocument} doc TextDocument of Editor
+ * @param {Selection} selection Selection of cursor
+ * @returns {Range} if the selection is valid for hungry delete above line
+ */
+function findDeleteRange(doc: TextDocument, selection: Selection): Range {
+    if (!selection.isEmpty) {
+        return new Range(selection.start, selection.end);
+    }
+
+    const cursorPosition = selection.active;
+    const cursorLineNumber = cursorPosition.line;
+    const cursorLine = doc.lineAt(cursorPosition);
+
+    const hungryDeleteAcrossLine = cursorLine.isEmptyOrWhitespace || (cursorPosition.character <= cursorLine.firstNonWhitespaceCharacterIndex);
+
+    /* Determine the delete range */
+    const startPosition = (hungryDeleteAcrossLine)
+        ? backtraceAboveLine(doc, cursorLineNumber)
+        : backtraceInLine(doc, cursorLine, cursorPosition);
+    const endPosition = cursorPosition;
+    const deleteRange = new Range(startPosition, endPosition);
+
+    return deleteRange;
+}
+
+
+/**
+ * Register the hundry delete commmand
+ *
+ * This extension simpliy override the keybinding ctrl+backspace to extends its hungry delete function to above lines
+ * Currently ctrl+backspace will hungry delete the entire whitespace on the same line before the cursor
+ * Therefore, to implement "backtraceInLine" is not neccessary
+ *
+ * @returns disposable to be registered in the context
+ */
+function hungryDelete() {
+    let disposable = commands.registerCommand('extension.hungryDelete', () => {
+
+        /* Edior and doc */
+        const editor = window.activeTextEditor;
+        const doc = editor.document;
+
+        const deleteRanges = editor.selections.map((selection) => {
+            return findDeleteRange(doc, selection);
+        });
+
+        // it includs the startPosition but exclude the endPositon
+        // This is in one transaction
+        let result = editor.edit((editorBuilder) => {
+            deleteRanges.forEach(editorBuilder.delete);
+        });
+    });
+
+    return disposable;
+}
+
+function test() {
+    let disposable = commands.registerCommand('extension.hungryDelete', () => {
+
+        /* Edior and doc */
+        const editor = window.activeTextEditor;
+        const doc = editor.document;
+
+        const deleteRanges = editor.selections.map((selection) => {
+            return findDeleteRange(doc, selection);
+        });
+
+        let result = editor.edit((editorBuilder) => {
+            deleteRanges.forEach((deleteRange) => {
+                if (deleteRange) {
+                    editorBuilder.delete(deleteRange);
+                }
+            });
+        });
+    });
+
+    return disposable;
+}
+
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
@@ -41,47 +189,8 @@ export function activate(context: ExtensionContext) {
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
 
-    // This extension simpliy override the keybinding ctrl+backspace to extends its hungry delete function above lines
-    // currently ctrl+backspace will hungry delete the entire whitespace on line same line before the cursor
-    // therefore, to implement "backtraceInLine" is not neccessary
-    let disposable = commands.registerCommand('extension.hungryDelete', () => {
-        /* Edior and doc */
-        const editor = window.activeTextEditor;
-        const doc = editor.document;
-
-        /* Cursor data */
-        const cursorPosition = editor.selection.active;
-        const cursorLineNumber = cursorPosition.line;
-        const cursorLine = doc.lineAt(cursorPosition);
-
-        /* Find out the start position and end position to be deleted */
-        if (cursorLine.isEmptyOrWhitespace || (cursorPosition.character <= cursorLine.firstNonWhitespaceCharacterIndex)) {
-            const startPosition = backtraceAboveLine(doc, cursorLineNumber);
-            const endPosition = cursorPosition;
-            const deleteRange = new Range(startPosition, endPosition);
-
-            let result = editor.edit((editorBuilder) => {
-                // it includs the startPosition but exclude the endPositon
-                editorBuilder.delete(deleteRange);
-            })
-
-            // only care Failed
-            result.then(function (success) {
-                if (!success) {
-                    window.showErrorMessage("Failed to delete the text");
-                }
-            }, function () {
-                window.showErrorMessage("Failed to invoke the editBuilder to delete the text");
-            })
-        } else {
-            // delete whitespace on the same line only
-            const result = commands.executeCommand("deleteWordLeft", null, null);
-            result.then(null, function () {
-                window.showErrorMessage("Failed to delte word lft")
-            })
-        }
-    });
-
+    // let disposable = hungryDelete();
+    let disposable = test();
     context.subscriptions.push(disposable);
 }
 
