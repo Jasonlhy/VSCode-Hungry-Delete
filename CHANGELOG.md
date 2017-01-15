@@ -1,6 +1,15 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.2.0] - 2017-01-15
+- Support multiple cursors
+
+### Changed
+- Use a mock implementation of `deleteWorldLeft` instead of invoking the editor command
+
+### Fixed
+- `ctrl + backspace` on visual selection don't delete the selection
+
 ## [1.1.0] - 2017-01-11
 - Use a more robust backtrace algorithm to find the starting position of hungry delete, and use extension API such as TextEdit instead of directly calling command.
 

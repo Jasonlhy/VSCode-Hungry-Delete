@@ -2,11 +2,12 @@
     "name": "hungry-delete",
     "displayName": "Hungry Delete",
     "description": "To delete an entire block of whitespace or tab",
-    "version": "1.1.2",
+    "version": "1.2.0",
     "publisher": "jasonlhy",
     "engines": {
         "vscode": "^1.5.0"
     },
+    "license": "MIT",
     "categories": [
         "Keymaps",
         "Other"
@@ -43,7 +44,6 @@
         "@types/node": "^6.0.40",
         "@types/mocha": "^2.2.32"
     },
-    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/Jasonlhy/VSCode-Hungry-Delete"
