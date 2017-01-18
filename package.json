@@ -26,6 +26,7 @@
         "keybindings": [
             {
                 "key": "ctrl+backspace",
+                "mac": "alt+backspace",
                 "command": "extension.hungryDelete",
                 "when": "editorTextFocus && !editorReadonly"
             }
