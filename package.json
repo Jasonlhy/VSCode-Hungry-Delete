@@ -2,12 +2,13 @@
     "name": "hungry-delete",
     "displayName": "Hungry Delete",
     "description": "To delete an entire block of whitespace or tab",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "publisher": "jasonlhy",
     "engines": {
         "vscode": "^1.5.0"
     },
     "license": "MIT",
+    "icon" : "images/icon.png",
     "categories": [
         "Keymaps",
         "Other"
