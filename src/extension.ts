@@ -52,9 +52,9 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
     let wordRangeBefore = doc.getWordRangeAtPosition(new Position(cursorPosition.line, charIndexBefore));
 
     // the cursor is at within word, end of word
-    // use of wordRangeBefore is to avoid ABC |CEF and ONLY one word separator, e.g. "3!|" => "3"
+    // and special case aaa |bbb but not include aaa |EOL
     if (wordRange && wordRangeBefore) {
-        return wordRange.start;
+        return wordRangeBefore.start;
     } else {
         // the cursor is at a whitespace
         let nonEmptyCharIndex = findFirstNonEmpty(text, charIndexBefore);
