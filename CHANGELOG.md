@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.2.2] - 2017-01-22
+
+### Fixed
+- Fix `aaa |bbb` bug
+
 ## [1.2.0] - 2017-01-15
 - Support multiple cursors
 

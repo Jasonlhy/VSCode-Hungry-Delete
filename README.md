@@ -5,7 +5,12 @@ I find it very annoying to press backspace multiple times to remove the leading 
 Therefore, I create this extension and it overrides `ctrl+backspace` key binding, once `ctrl+backspace` is pressed, a command is executed.
 
 # Features
-`ctrl+backspace` to delete **ALL** tab or whitespaces before the cursor, until it reaches a non empty character.
+
+To delete **ALL** tab or whitespaces before the cursor, until it reaches a non empty character.
+
+- Windows and Linux : Press `ctrl+backspace` 
+- Mac : Press `alt+backspace`
+
 
 ## Before installing Hungry Delete
 You have to press `ctrl+backspace` multiple times to delete the leading spaces and tabs
@@ -13,7 +18,7 @@ You have to press `ctrl+backspace` multiple times to delete the leading spaces a
 ![BeforeExtension](images/before.gif)
 
 ## After intalling Hungry Delete
-You have to press `ctrl+backspace` **ONCE** only to delete the leading spaces and tabs until you reaches a non-empty character
+You only have to press `ctrl+backspace` **ONCE** to delete the leading spaces and tabs until you reaches a non-empty character
 
 ![AfterExtension](images/after.gif)
 
@@ -31,7 +36,7 @@ becasue exisiting `ctrl+backspace` actually is a hungry delete on the same line 
 for source code editings.
 
 In previous version which supports only a single cursor, the code just invokes `deleteWordLeft` command to delete the word before the cursor.
-In order to To support multiple cursors, I need to invoke **each** cursor to `deleteWorldLeft`, but I can't find any API available 
+In order to support multiple cursors, I need to invoke **each** cursor to `deleteWorldLeft`, but I can't find any API available 
 so I write a mock implementation of `deleteWorldLeft`. 
 
 ## Optimizations for source code editings.
@@ -73,4 +78,4 @@ Example:
 - The word range is undefined for word separators
 
 # Reference
-The term **Hungry Delete** comes from [Enacs](http://www.gnu.org/software/emacs/manual/html_node/emacs/Hungry-Delete.html)
+The term **Hungry Delete** comes from [Emacs](http://www.gnu.org/software/emacs/manual/html_node/emacs/Hungry-Delete.html)

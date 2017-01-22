@@ -2,7 +2,7 @@
     "name": "hungry-delete",
     "displayName": "Hungry Delete",
     "description": "To delete an entire block of whitespace or tab",
-    "version": "1.2.0",
+    "version": "1.2.2",
     "publisher": "jasonlhy",
     "engines": {
         "vscode": "^1.5.0"
