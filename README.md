@@ -77,5 +77,17 @@ Example:
 - Only can register the word pattern but it cannot be retrieved
 - The word range is undefined for word separators
 
+# Change the key binding
+By default, hungry delete command maps to `ctrl+backspace` on windows and linux, `alt+backspace` on mac.
+The following snippet can be placed inside `keybings.json` file to override the default key binding,
+it sets `ctrl+shift+backspace` for the command.
+
+```json
+{
+        "key": "ctrl+shift+backspace",
+        "command": "extension.hungryDelete",
+        "when": "editorTextFocus && !editorReadonly"
+}
+```
 # Reference
 The term **Hungry Delete** comes from [Emacs](http://www.gnu.org/software/emacs/manual/html_node/emacs/Hungry-Delete.html)

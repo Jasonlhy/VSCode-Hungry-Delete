@@ -8,6 +8,7 @@
         "vscode": "^1.5.0"
     },
     "license": "MIT",
+    "icon" : "images/icon.png",
     "categories": [
         "Keymaps",
         "Other"
@@ -26,6 +27,7 @@
         "keybindings": [
             {
                 "key": "ctrl+backspace",
+                "mac": "alt+backspace",
                 "command": "extension.hungryDelete",
                 "when": "editorTextFocus && !editorReadonly"
             }
