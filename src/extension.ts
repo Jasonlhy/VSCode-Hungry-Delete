@@ -168,7 +168,7 @@ function hungryDelete() {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = commands.registerCommand('extension.hungryDelete', () => {
+    let disposable = commands.registerCommand('extension.hungryDelete', async () => {
 
         /* Edior and doc */
         const editor = window.activeTextEditor;
@@ -185,6 +185,10 @@ function hungryDelete() {
                  editorBuilder.delete(deleteRange);
             });
         });
+
+        let success = await result;
+        console.log("Success: " + success);
+        return success;
     });
 
     return disposable;
