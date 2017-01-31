@@ -8,7 +8,7 @@ import * as assert from 'assert';
 
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
-import { Range, window, Position, TextEditor, TextDocument, Selection, commands, workspace } from 'vscode';
+import { Range, window, Position, TextEditor, TextDocument, Selection } from 'vscode';
 import * as myExtension from '../src/extension';
 
 /**
@@ -57,7 +57,7 @@ function getText(sline: number, scol: number, eline: number, ecol: number) {
 }
 
 async function ExecuteHungryDelete(title) {
-    let r = await commands.executeCommand("extension.hungryDelete");
+    let r = await myExtension.hungryDelete();
     if (!r && title){
         console.log("execute command failed for: " + title);
     }
@@ -71,14 +71,12 @@ function debugContent(){
     console.log('4 line: ' + window.activeTextEditor.document.lineAt(3).text);
 }
 
-// Inesrt the sample text for each text case
-setup(async () => {
-    await InsertSampleText();
-});
-
-
-
 suite("Hungry Delete across line", () => {
+    // Inesrt the sample text for each text case
+    setup(async () => {
+        await InsertSampleText();
+    });
+
     // the test only works for using space for tabs
     // because getText() doesn't quite work for \t ...
     test("Assert Sample Text", async () => {

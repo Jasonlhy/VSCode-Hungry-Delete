@@ -2,7 +2,7 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { window, commands, ExtensionContext, Position, Range, TextDocument, TextLine, Selection, languages } from 'vscode';
+import { window, commands, ExtensionContext, Position, Range, TextDocument, TextLine, Selection } from 'vscode';
 
 
 /**
@@ -67,15 +67,15 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
             // delete a space with the entire word at left
             // in consistent to the exisiting implementation of "deleteWorldLeft"
             wordRange = doc.getWordRangeAtPosition(new Position(cursorPosition.line, nonEmptyCharIndex));
-            if (wordRange){
+            if (wordRange) {
                 return wordRange.start;
             } else {
                 // For edge case : If there is Word Seperator, e.g. @ or =  - its word range is undefined
                 // the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
                 const separatorChar = text.charAt(nonEmptyCharIndex);
                 const nonSeparatorIndex = findFirstNonSeparator(text, nonEmptyCharIndex - 1, separatorChar);
-            
-                if (nonSeparatorIndex < 0){
+
+                if (nonSeparatorIndex < 0) {
                     return new Position(cursorPosition.line, 0);
                 } else {
                     return new Position(cursorPosition.line, nonSeparatorIndex + 1);
@@ -83,7 +83,7 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
             }
         }
     }
-    }
+}
 
 /**
  * Find the non-empty character from backtracing at columnNumber
@@ -114,7 +114,7 @@ function findFirstNonEmpty(text: String, columnNumber: number): number {
  * @param {String} wordSeparator
  * @returns {number}
  */
-function findFirstNonSeparator(text: String, columnNumber: number, wordSeparator : String): number {
+function findFirstNonSeparator(text: String, columnNumber: number, wordSeparator: String): number {
     for (let i = columnNumber; i >= 0; i--) {
         let c = text.charAt(i);
 
@@ -156,6 +156,32 @@ function findDeleteRange(doc: TextDocument, selection: Selection): Range {
 
 
 /**
+ *  The hungry delete callback registered in the command 
+ * 
+ * @export 
+ * @returns {Thenable<Boolean>} Promise of the editor.delete() action, can be awaited, or chained, will be resolved async
+ */
+export function hungryDelete() : Thenable<Boolean>{
+    /* Edior and doc */
+    const editor = window.activeTextEditor;
+    const doc = editor.document;
+
+    const deleteRanges = editor.selections.map((selection) => {
+        return findDeleteRange(doc, selection);
+    });
+
+    // it includs the startPosition but exclude the endPositon
+    // This is in one transaction
+    let result = editor.edit((editorBuilder) => {
+        deleteRanges.forEach((deleteRange) => {
+            editorBuilder.delete(deleteRange);
+        });
+    });
+
+    return result;
+}
+
+/**
  * Register the hundry delete commmand
  *
  * This extension simpliy override the keybinding ctrl+backspace to extends its hungry delete function to above lines
@@ -164,32 +190,11 @@ function findDeleteRange(doc: TextDocument, selection: Selection): Range {
  *
  * @returns disposable to be registered in the context
  */
-function hungryDelete() {
+function registerHungryDelete() {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = commands.registerCommand('extension.hungryDelete', async () => {
-
-        /* Edior and doc */
-        const editor = window.activeTextEditor;
-        const doc = editor.document;
-
-        const deleteRanges = editor.selections.map((selection) => {
-            return findDeleteRange(doc, selection);
-        });
-
-        // it includs the startPosition but exclude the endPositon
-        // This is in one transaction
-        let result = editor.edit((editorBuilder) => {
-            deleteRanges.forEach((deleteRange) => {
-                 editorBuilder.delete(deleteRange);
-            });
-        });
-
-        let success = await result;
-        console.log("Success: " + success);
-        return success;
-    });
+    let disposable = commands.registerCommand('extension.hungryDelete', hungryDelete);
 
     return disposable;
 }
@@ -201,7 +206,7 @@ export function activate(context: ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "hungry-delete" is now active!');
 
-    let disposable = hungryDelete();
+    let disposable = registerHungryDelete();
     context.subscriptions.push(disposable);
 }
 
