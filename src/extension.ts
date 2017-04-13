@@ -4,6 +4,35 @@
 // Import the module and reference it with the alias vscode in your code below
 import { window, commands, ExtensionContext, Position, Range, TextDocument, TextLine, Selection } from 'vscode';
 
+/**
+ * Extension Method
+ */
+declare global{
+    interface String {
+        /**
+         * Test the string content from a column index to the head of the string.
+         * If the contineCondition faild, it will return the failed index.
+         * 
+         * @param {number} columnNumber the column index starts testing
+         * @param {(theChar: string) => Boolean} continueCondition, a function accept the char at current column
+         * @returns {number} -1 if all contineCondition true
+         * 
+         * @memberOf String
+         */
+        reverseFindUtil(columnNumber : number, continueCondition: (theChar: string) => Boolean): number;
+    }
+}
+
+String.prototype.reverseFindUtil= function(columnNumber : number, continueCondition: (theChar: string) => Boolean) {
+    for (let i = columnNumber; i >= 0; i--) {
+        if (!continueCondition(this[i])) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 
 /**
  * Back trace the first non-empty character position in the above line, used as start positon to be deleted
@@ -57,7 +86,7 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
         return wordRangeBefore.start;
     } else {
         // the cursor is at a whitespace
-        let nonEmptyCharIndex = findFirstNonEmpty(text, charIndexBefore);
+        let nonEmptyCharIndex = text.reverseFindUtil(charIndexBefore, theChar => /s/.test(theChar));
         let offset = charIndexBefore - nonEmptyCharIndex;
         let deleteWhiteSpaceOnly = (offset > 1);
 
@@ -73,57 +102,13 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
                 // For edge case : If there is Word Seperator, e.g. @ or =  - its word range is undefined
                 // the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
                 const separatorChar = text.charAt(nonEmptyCharIndex);
-                const nonSeparatorIndex = findFirstNonSeparator(text, nonEmptyCharIndex - 1, separatorChar);
+                const nonSeparatorIndex = text.reverseFindUtil(nonEmptyCharIndex - 1, theChar => theChar === separatorChar);
+                const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
 
-                if (nonSeparatorIndex < 0) {
-                    return new Position(cursorPosition.line, 0);
-                } else {
-                    return new Position(cursorPosition.line, nonSeparatorIndex + 1);
-                }
+                return new Position(cursorPosition.line, endIdx);   
             }
         }
     }
-}
-
-/**
- * Find the non-empty character from backtracing at columnNumber
- * 
- * @param {String} text
- * @param {number} columnNumber
- * @returns {number}
- */
-function findFirstNonEmpty(text: String, columnNumber: number): number {
-    for (let i = columnNumber; i >= 0; i--) {
-        let c = text.charAt(i);
-        let isWhiteSpace = /\s/.test(c);
-
-        if (!isWhiteSpace) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-
-/**
- * Find the character that don't match with wordSeparator from backtracing at columnNumber
- * 
- * @param {String} text
- * @param {number} columnNumber
- * @param {String} wordSeparator
- * @returns {number}
- */
-function findFirstNonSeparator(text: String, columnNumber: number, wordSeparator: String): number {
-    for (let i = columnNumber; i >= 0; i--) {
-        let c = text.charAt(i);
-
-        if (c !== wordSeparator) {
-            return i;
-        }
-    }
-
-    return -1;
 }
 
 /**
@@ -149,9 +134,8 @@ function findDeleteRange(doc: TextDocument, selection: Selection): Range {
         ? backtraceAboveLine(doc, cursorLineNumber)
         : backtraceInLine(doc, cursorLine, cursorPosition);
     const endPosition = cursorPosition;
-    const deleteRange = new Range(startPosition, endPosition);
 
-    return deleteRange;
+    return new Range(startPosition, endPosition);
 }
 
 
@@ -165,18 +149,11 @@ export function hungryDelete() : Thenable<Boolean>{
     /* Edior and doc */
     const editor = window.activeTextEditor;
     const doc = editor.document;
-
-    const deleteRanges = editor.selections.map((selection) => {
-        return findDeleteRange(doc, selection);
-    });
+    const deleteRanges = editor.selections.map(selection => findDeleteRange(doc, selection));
 
     // it includs the startPosition but exclude the endPositon
     // This is in one transaction
-    let result = editor.edit((editorBuilder) => {
-        deleteRanges.forEach((deleteRange) => {
-            editorBuilder.delete(deleteRange);
-        });
-    });
+    let result = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
 
     return result;
 }
