@@ -10,22 +10,26 @@ import { window, commands, ExtensionContext, Position, Range, TextDocument, Text
 declare global{
     interface String {
         /**
-         * Test the string content from a column index to the head of the string.
-         * If the contineCondition faild, it will return the failed index.
+         * Takes a predicate and a list and returns the index of the first rightest char in the string satisfying the predicate, 
+         * or -1 if there is no such char.
          * 
          * @param {number} columnNumber the column index starts testing
-         * @param {(theChar: string) => Boolean} continueCondition, a function accept the char at current column
-         * @returns {number} -1 if all contineCondition true
+         * @param {(theChar: string) => Boolean} predicate to test the char
+         * @returns {number} -1 if there is no such char
          * 
          * @memberOf String
          */
-        reverseFindUtil(columnNumber : number, continueCondition: (theChar: string) => Boolean): number;
+        findIndexR(predicate: (theChar: string) => Boolean, columnNumber?: number,): number;
     }
 }
 
-String.prototype.reverseFindUtil= function(columnNumber : number, continueCondition: (theChar: string) => Boolean) {
+String.prototype.findIndexR= function(predicate: (theChar: string) => Boolean, columnNumber?: number) {
+    if (!columnNumber){
+        columnNumber = this.length;
+    }
+
     for (let i = columnNumber; i >= 0; i--) {
-        if (!continueCondition(this[i])) {
+        if (predicate(this[i])) {
             return i;
         }
     }
@@ -86,7 +90,7 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
         return wordRangeBefore.start;
     } else {
         // the cursor is at a whitespace
-        let nonEmptyCharIndex = text.reverseFindUtil(charIndexBefore, theChar => /s/.test(theChar));
+        let nonEmptyCharIndex = text.findIndexR(theChar => !/s/.test(theChar), charIndexBefore);
         let offset = charIndexBefore - nonEmptyCharIndex;
         let deleteWhiteSpaceOnly = (offset > 1);
 
@@ -102,7 +106,7 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
                 // For edge case : If there is Word Seperator, e.g. @ or =  - its word range is undefined
                 // the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
                 const separatorChar = text.charAt(nonEmptyCharIndex);
-                const nonSeparatorIndex = text.reverseFindUtil(nonEmptyCharIndex - 1, theChar => theChar === separatorChar);
+                const nonSeparatorIndex = text.findIndexR(theChar => theChar !== separatorChar, nonEmptyCharIndex - 1);
                 const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
 
                 return new Position(cursorPosition.line, endIdx);   
