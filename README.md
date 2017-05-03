@@ -60,6 +60,36 @@ You have to press `backspace` once
 2. `npm install`
 3. Edit `src/extension.ts`
 
+# Conflict With Vim Extension
+Becasue [Vim extension](https://marketplace.visualstudio.com/items?itemName=jasonlhy.hungry-delete) define its own command for `ctrl+backspace` and `backspace`. To work with [Vim extension](https://marketplace.visualstudio.com/items?itemName=jasonlhy.hungry-delete), you have to explicitly define these two key bindings map to the commands of this extension by adding following code snippet into `keybindings.json`
+
+```json
+    {
+        "key": "backspace",
+        "command": "extension.smartBackspace",
+        "when": "config.hungryDelete.enableSmartBackspace && editorTextFocus && !editorReadonly"
+    },
+    {
+        "key": "ctrl+backspace",
+        "command": "extension.hungryDelete",
+        "when": "editorTextFocus && !editorReadonly"
+    }
+```
+
+## Steps
+
+1. Click No if VSCode detect this extension conflict with Vim extension
+
+![Conflict](images/conflict.png)
+
+2. Add setting into `keybindings.json`
+
+![Step 1](images/key1.png)
+
+![Step 2](images/key2.png)
+
+![Step 3](images/key3.png)
+
 # Implementation Note
 This command aims to be backward compatiable with exisiting implementation of `ctrl+backspace` a.k.a `deleteWorldLeft` 
 becasue exisiting `ctrl+backspace` actually is a hungry delete on the same line with some optimizations
