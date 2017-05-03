@@ -2,28 +2,58 @@
 Hungry Delete Extension for Visual Studio Code
 
 I find it very annoying to press backspace multiple times to remove the leading tabs or whitespaces in order to return to the previos end of the line. 
-Therefore, I create this extension and it overrides `ctrl+backspace` key binding, once `ctrl+backspace` is pressed, a command is executed.
+
+Therefore, I created this extension, it overrides `ctrl+backspace` key binding, once `ctrl+backspace` is pressed, a command is executed. 
+
+Later I found that sometime I just want to delete the upper line and keep the indent (Personally I don't use backspace to adjust the indent, I use `ctrl+[`), so I added the smart backspace feafure which overrides `backspace`.
 
 # Features
+
+## Hungry Delete
 
 To delete **ALL** tab or whitespaces before the cursor, until it reaches a non empty character.
 
 - Windows and Linux : Press `ctrl+backspace` 
 - Mac : Press `alt+backspace`
 
+## Smart Backspace
+To delete upper empty line or delete all tabs or whitespaces until the end of the previous line.
 
-## Before installing Hungry Delete
+- Windows and Linux and Mac : Press `backspace` 
+
+# Hungry Delete Demo
+
+## Before Hungry Delete
 You have to press `ctrl+backspace` multiple times to delete the leading spaces and tabs
 
-![BeforeExtension](images/before.gif)
+![Before Hungry Delete](images/before.gif)
 
-## After intalling Hungry Delete
+## After Hungry Delete
 You only have to press `ctrl+backspace` **ONCE** to delete the leading spaces and tabs until you reaches a non-empty character
 
-![AfterExtension](images/after.gif)
+![After Hungry Delete](images/after.gif)
 
-## Even support multiple cursor
-![multiple_cursor](images/multiple.gif)
+## Support Multiple Cursor
+
+![Hugry Delete Multiple Cursor](images/multiple.gif)
+
+# Smart Backspace Demo
+
+## Before Smart Backspace
+
+You have to press `backspace` multiple times to delete the leading tabs or space to upper line. (Or press upper arrow and press `ctrl+k`)
+
+![Before Smart Backspace](images/before_smartbackspace.gif)
+
+## After Smart Backspace
+
+You have to press `backspace` once
+
+![After Smart Backspace](images/after_smartbackspace.gif)
+
+## Support Multiple Cursor
+
+![Smart Backspace Multiple Cursor](images/smartbackspace_multicursor.gif)
 
 # Development
 1. `git clone https://github.com/Jasonlhy/VSCode-Hungry-Delete.git`
@@ -74,10 +104,15 @@ Example:
 - VSC:  "This is |"  => "This |"
 
 ## Limitation of API
-- Only can register the word pattern but it cannot be retrieved
-- The word range is undefined for word separators
+~~- Only can register the word pattern but it cannot be retrieved~~
 
-# Change the key binding
+After a fews month I found out that the API actually [can retrieve the word pattern](https://code.visualstudio.com/docs/extensionAPI/vscode-api#_a-nameworkspaceconfigurationaspan-classcodeitem-id867workspaceconfigurationspan), I think current implementation is acceptable and I am lazy to change it, but I am welcome with pull request.
+
+- The word range is undefined when the cursor is placed at word separators
+
+# Setting
+
+## Change the key binding
 By default, hungry delete command maps to `ctrl+backspace` on windows and linux, `alt+backspace` on mac.
 The following snippet can be placed inside `keybings.json` file to override the default key binding,
 it sets `ctrl+shift+backspace` for the command.
@@ -89,5 +124,17 @@ it sets `ctrl+shift+backspace` for the command.
         "when": "editorTextFocus && !editorReadonly"
 }
 ```
+
+## Disable smart backspace
+
+To disable smart backspace, just set `hungryDelete.enableSmartBackspace` to be false in setting.
+
+```json
+{
+    "hungryDelete.enableSmartBackspace" : false
+}
+```
 # Reference
 The term **Hungry Delete** comes from [Emacs](http://www.gnu.org/software/emacs/manual/html_node/emacs/Hungry-Delete.html)
+
+The term **Smart Backspace** comes from [PhpStorm](https://blog.jetbrains.com/phpstorm/2014/09/smart-backspace-in-phpstorm-8/)
