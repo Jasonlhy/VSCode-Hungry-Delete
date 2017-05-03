@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.3.0] - 2017-05-03
+- Support Smart Backspace
+
 ## [1.2.2] - 2017-01-22
 
 ### Fixed

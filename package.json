@@ -1,8 +1,8 @@
 {
     "name": "hungry-delete",
     "displayName": "Hungry Delete",
-    "description": "To delete an entire block of whitespace or tab",
-    "version": "1.2.2",
+    "description": "To delete an entire block of whitespace or tab, and help programmers to reduce the number of time to they need to press backspace",
+    "version": "1.3.0",
     "publisher": "jasonlhy",
     "engines": {
         "vscode": "^1.5.0"
