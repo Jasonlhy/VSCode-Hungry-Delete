@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.3.1] - 2017-05-03
+- Change README with Vim Compatibility
+
 ## [1.3.0] - 2017-05-03
 - Support Smart Backspace
 
