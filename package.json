@@ -14,7 +14,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.hungryDelete"
+        "onCommand:extension.hungryDelete",
+        "onCommand:extension.smartBackspace"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -22,6 +23,10 @@
             {
                 "command": "extension.hungryDelete",
                 "title": "Hungry Delete"
+            },
+            {
+                "command": "extension.smartBackspace",
+                "title": "Smart Backspace"
             }
         ],
         "keybindings": [
@@ -30,8 +35,25 @@
                 "mac": "alt+backspace",
                 "command": "extension.hungryDelete",
                 "when": "editorTextFocus && !editorReadonly"
+            },
+            {
+                "key": "backspace",
+                "mac": "backspace",
+                "command": "extension.smartBackspace",
+                "when": "config.hungryDelete.enableSmartBackspace && editorTextFocus && !editorReadonly"
             }
-        ]
+        ],
+        "configuration": {
+            "title" : "Hungry Delete Configuration",
+            "type" : "object",
+            "properties": {
+                "hungryDelete.enableSmartBackspace": {
+                    "type": "boolean",
+                    "description": "Enable Smart Backsapce",
+                    "default": true
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",

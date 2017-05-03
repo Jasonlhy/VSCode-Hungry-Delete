@@ -2,12 +2,22 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { window, commands, ExtensionContext, Position, Range, TextDocument, TextLine, Selection } from 'vscode';
+import { 
+    window, 
+    commands, 
+    ExtensionContext, 
+    Position, 
+    Range, 
+    TextDocument, 
+    TextLine, 
+    Selection, 
+    workspace 
+} from 'vscode';
 
 /**
  * Extension Method
  */
-declare global{
+declare global {
     interface String {
         /**
          * Takes a predicate and a list and returns the index of the first rightest char in the string satisfying the predicate, 
@@ -19,12 +29,12 @@ declare global{
          * 
          * @memberOf String
          */
-        findIndexR(predicate: (theChar: string) => Boolean, columnNumber?: number,): number;
+        findIndexR(predicate: (theChar: string) => Boolean, columnNumber?: number, ): number;
     }
 }
 
-String.prototype.findIndexR= function(predicate: (theChar: string) => Boolean, columnNumber?: number) {
-    if (!columnNumber){
+String.prototype.findIndexR = function (predicate: (theChar: string) => Boolean, columnNumber?: number) {
+    if (!columnNumber) {
         columnNumber = this.length;
     }
 
@@ -109,14 +119,14 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
                 const nonSeparatorIndex = text.findIndexR(theChar => theChar !== separatorChar, nonEmptyCharIndex - 1);
                 const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
 
-                return new Position(cursorPosition.line, endIdx);   
+                return new Position(cursorPosition.line, endIdx);
             }
         }
     }
 }
 
 /**
- * Find the range to be deleted with backtracing the start position from a cursor positoin
+ * Find the range to be deleted for hungry delete, backtracing the start position from a cursor positoin
  *
  * @param {TextDocument} doc TextDocument of Editor
  * @param {Selection} selection Selection of cursor
@@ -149,7 +159,7 @@ function findDeleteRange(doc: TextDocument, selection: Selection): Range {
  * @export 
  * @returns {Thenable<Boolean>} Promise of the editor.delete() action, can be awaited, or chained, will be resolved async
  */
-export function hungryDelete() : Thenable<Boolean>{
+export function hungryDelete(): Thenable<Boolean> {
     /* Edior and doc */
     const editor = window.activeTextEditor;
     const doc = editor.document;
@@ -157,9 +167,7 @@ export function hungryDelete() : Thenable<Boolean>{
 
     // it includs the startPosition but exclude the endPositon
     // This is in one transaction
-    let result = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
-
-    return result;
+    return editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
 }
 
 /**
@@ -180,6 +188,57 @@ function registerHungryDelete() {
     return disposable;
 }
 
+/**
+ *  Find the range to be deleted for smart backspace, backtracing the start position from a cursor positoin
+ * 
+ * @param {TextDocument} doc TextDocument of Editor
+ * @param {Selection} selection selection Selection of cursor
+ * @returns {Range} 
+ */
+function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range {
+    if (!selection.isEmpty) {
+        return new Range(selection.start, selection.end);
+    }
+
+    const cursorPosition = selection.active;
+    const cursorLineNumber = cursorPosition.line;
+    const cursorLine = doc.lineAt(cursorPosition);
+
+    let isSmartBackspace = (cursorLineNumber > 0) && (cursorPosition.character <= cursorLine.firstNonWhitespaceCharacterIndex);
+    if (isSmartBackspace) {
+        let aboveLine = doc.lineAt(cursorLineNumber - 1);
+        if (aboveLine.isEmptyOrWhitespace) {
+            return aboveLine.rangeIncludingLineBreak;
+        } else {
+            return new Range(backtraceAboveLine(doc, cursorLineNumber), cursorPosition);
+        }
+    } else if (cursorPosition.line == 0 && cursorPosition.character == 0) {
+        // edge case, otherwise it will failed
+        return new Range(cursorPosition, cursorPosition);
+    } else {
+        // original backsapce
+        let positionBefore = cursorPosition.translate(0, -1);
+        return new Range(positionBefore, cursorPosition);
+    }
+}
+
+function smartBackspace(): Thenable<Boolean> {
+    const editor = window.activeTextEditor;
+    const doc = editor.document;
+    const deleteRanges = editor.selections.map(selection => findSmartBackspaceRange(doc, selection));
+
+    return editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
+}
+
+function registerSmartBackspace() {
+    // The command has been defined in the package.json file
+    // Now provide the implementation of the command with  registerCommand
+    // The commandId parameter must match the command field in package.json
+    let disposable = commands.registerCommand('extension.smartBackspace', smartBackspace);
+
+    return disposable;
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
@@ -187,8 +246,8 @@ export function activate(context: ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "hungry-delete" is now active!');
 
-    let disposable = registerHungryDelete();
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(registerHungryDelete());
+    context.subscriptions.push(registerSmartBackspace());
 }
 
 // this method is called when your extension is deactivated
