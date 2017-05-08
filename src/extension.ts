@@ -207,11 +207,11 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
     let isSmartBackspace = (cursorLineNumber > 0) && (cursorPosition.character <= cursorLine.firstNonWhitespaceCharacterIndex);
     if (isSmartBackspace) {
         let aboveLine = doc.lineAt(cursorLineNumber - 1);
-        if (aboveLine.isEmptyOrWhitespace) {
-            return aboveLine.rangeIncludingLineBreak;
-        } else {
-            return new Range(backtraceAboveLine(doc, cursorLineNumber), cursorPosition);
-        }
+        let aboveRange = aboveLine.range;
+
+        return (aboveLine.isEmptyOrWhitespace) ?
+             new Range(aboveRange.start, aboveRange.start.translate(1, 0)) : 
+             new Range(backtraceAboveLine(doc, cursorLineNumber), cursorPosition);
     } else if (cursorPosition.line == 0 && cursorPosition.character == 0) {
         // edge case, otherwise it will failed
         return new Range(cursorPosition, cursorPosition);
