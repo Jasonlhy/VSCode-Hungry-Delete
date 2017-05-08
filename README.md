@@ -78,17 +78,17 @@ Becasue [Vim extension](https://marketplace.visualstudio.com/items?itemName=jaso
 
 ## Steps
 
-1. Click No if VSCode detect this extension conflict with Vim extension
+1. Click "No" if VSCode detected that this extension have conflict with Vim extension
 
-![Conflict](images/conflict.png)
+    ![Conflict](images/conflict.png)
 
 2. Add setting into `keybindings.json`
 
-![Step 1](images/key1.png)
+    ![Step 1](images/key1.png)
 
-![Step 2](images/key2.png)
+    ![Step 2](images/key2.png)
 
-![Step 3](images/key3.png)
+    ![Step 3](images/key3.png)
 
 # Implementation Note
 This command aims to be backward compatiable with exisiting implementation of `ctrl+backspace` a.k.a `deleteWorldLeft` 
