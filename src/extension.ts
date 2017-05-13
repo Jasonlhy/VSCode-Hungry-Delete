@@ -20,7 +20,7 @@ import {
 declare global {
     interface String {
         /**
-         * Takes a predicate and a list and returns the index of the first rightest char in the string satisfying the predicate,
+         * Takes a predicate and returns the index of the first rightest char in the string satisfying the predicate,
          * or -1 if there is no such char.
          *
          * @param {number} columnNumber the column index starts testing
@@ -29,12 +29,12 @@ declare global {
          *
          * @memberOf String
          */
-        findIndexR(predicate: (theChar: string) => Boolean, columnNumber?: number, ): number;
+        findLastIndex(predicate: (theChar: string) => Boolean, columnNumber?: number, ): number;
     }
 }
 
-String.prototype.findIndexR = function (predicate: (theChar: string) => Boolean, columnNumber?: number) {
-    if (!columnNumber) {
+String.prototype.findLastIndex = function (predicate: (theChar: string) => Boolean, columnNumber?: number) {
+    if (typeof columnNumber === 'undefined') {
         columnNumber = this.length;
     }
 
@@ -100,7 +100,7 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
         return wordRangeBefore.start;
     } else {
         // the cursor is at a whitespace
-        let nonEmptyCharIndex = text.findIndexR(theChar => !/s/.test(theChar), charIndexBefore);
+        let nonEmptyCharIndex = text.findLastIndex(theChar => !/s/.test(theChar), charIndexBefore);
         let offset = charIndexBefore - nonEmptyCharIndex;
         let deleteWhiteSpaceOnly = (offset > 1);
 
@@ -116,7 +116,7 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
                 // For edge case : If there is Word Seperator, e.g. @ or =  - its word range is undefined
                 // the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
                 const separatorChar = text.charAt(nonEmptyCharIndex);
-                const nonSeparatorIndex = text.findIndexR(theChar => theChar !== separatorChar, nonEmptyCharIndex - 1);
+                const nonSeparatorIndex = text.findLastIndex(theChar => theChar !== separatorChar, nonEmptyCharIndex - 1);
                 const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
 
                 return new Position(cursorPosition.line, endIdx);
