@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.3.3] - 2017-05-13
+- Fix bug: ** located at the start of the line cannot be deleted by ctrl+backspace because !0 is evaluated to false inside if()
+
 ## [1.3.2] - 2017-05-08
 - Fix rare case when line.rangeIncludingLineBreak === line.range
 
