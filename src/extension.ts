@@ -2,16 +2,16 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { 
-    window, 
-    commands, 
-    ExtensionContext, 
-    Position, 
-    Range, 
-    TextDocument, 
-    TextLine, 
-    Selection, 
-    workspace 
+import {
+    window,
+    commands,
+    ExtensionContext,
+    Position,
+    Range,
+    TextDocument,
+    TextLine,
+    Selection,
+    workspace
 } from 'vscode';
 
 /**
@@ -20,13 +20,13 @@ import {
 declare global {
     interface String {
         /**
-         * Takes a predicate and a list and returns the index of the first rightest char in the string satisfying the predicate, 
+         * Takes a predicate and a list and returns the index of the first rightest char in the string satisfying the predicate,
          * or -1 if there is no such char.
-         * 
+         *
          * @param {number} columnNumber the column index starts testing
          * @param {(theChar: string) => Boolean} predicate to test the char
          * @returns {number} -1 if there is no such char
-         * 
+         *
          * @memberOf String
          */
         findIndexR(predicate: (theChar: string) => Boolean, columnNumber?: number, ): number;
@@ -80,9 +80,9 @@ function backtraceAboveLine(doc: TextDocument, cursorLineNumber: number): Positi
 
 /**
  * Back trace the first index of word or first index of continuous whitespaces or index of word Separator, used as start positon to be deleted
- * 
+ *
  * This is used to perform a mock version of "deleteWorldLeft"
- * 
+ *
  * @param {TextDocument} doc
  * @param {TextLine} cursorLine
  * @param {Position} cursorPosition
@@ -154,9 +154,9 @@ function findDeleteRange(doc: TextDocument, selection: Selection): Range {
 
 
 /**
- *  The hungry delete callback registered in the command 
- * 
- * @export 
+ *  The hungry delete callback registered in the command
+ *
+ * @export
  * @returns {Thenable<Boolean>} Promise of the editor.delete() action, can be awaited, or chained, will be resolved async
  */
 export function hungryDelete(): Thenable<Boolean> {
@@ -190,10 +190,10 @@ function registerHungryDelete() {
 
 /**
  *  Find the range to be deleted for smart backspace, backtracing the start position from a cursor positoin
- * 
+ *
  * @param {TextDocument} doc TextDocument of Editor
  * @param {Selection} selection selection Selection of cursor
- * @returns {Range} 
+ * @returns {Range}
  */
 function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range {
     if (!selection.isEmpty) {
@@ -210,7 +210,7 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
         let aboveRange = aboveLine.range;
 
         return (aboveLine.isEmptyOrWhitespace) ?
-             new Range(aboveRange.start, aboveRange.start.translate(1, 0)) : 
+             new Range(aboveRange.start, aboveRange.start.translate(1, 0)) :
              new Range(backtraceAboveLine(doc, cursorLineNumber), cursorPosition);
     } else if (cursorPosition.line == 0 && cursorPosition.character == 0) {
         // edge case, otherwise it will failed
