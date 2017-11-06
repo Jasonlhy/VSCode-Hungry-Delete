@@ -115,8 +115,18 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
             } else {
                 // For edge case : If there is Word Seperator, e.g. @ or =  - its word range is undefined
                 // the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
-                const separatorChar = text.charAt(nonEmptyCharIndex);
-                const nonSeparatorIndex = text.findLastIndex(theChar => theChar !== separatorChar, nonEmptyCharIndex - 1);
+                let idx = nonEmptyCharIndex;
+                let separatorChar = text.charAt(idx);
+                if (separatorChar === " ") {
+                    idx = text.findLastIndex(theChar => !/s/.test(theChar), idx - 1);
+                    if (idx < 0) {
+                        return new Position(cursorPosition.line, 0);
+                    } else {
+                        separatorChar = text.charAt(idx);
+                    }
+                }
+
+                const nonSeparatorIndex = text.findLastIndex(theChar => theChar !== separatorChar, idx - 1);
                 const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
 
                 return new Position(cursorPosition.line, endIdx);
@@ -210,15 +220,21 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
         let aboveRange = aboveLine.range;
 
         return (aboveLine.isEmptyOrWhitespace) ?
-             new Range(aboveRange.start, aboveRange.start.translate(1, 0)) :
-             new Range(backtraceAboveLine(doc, cursorLineNumber), cursorPosition);
+            new Range(aboveRange.start, aboveRange.start.translate(1, 0)) :
+            new Range(backtraceAboveLine(doc, cursorLineNumber), cursorPosition);
     } else if (cursorPosition.line == 0 && cursorPosition.character == 0) {
         // edge case, otherwise it will failed
         return new Range(cursorPosition, cursorPosition);
     } else {
-        // original backsapce
         let positionBefore = cursorPosition.translate(0, -1);
-        return new Range(positionBefore, cursorPosition);
+        let positionAfter = cursorPosition.translate(0, 1);
+        let peekBackward = doc.getText(new Range(positionBefore, cursorPosition));
+        let peekForward = doc.getText(new Range(cursorPosition, positionAfter));
+        let isAutoClosePair = peekBackward === "(" && peekForward === ")";
+        
+        return (isAutoClosePair) ?
+            new Range(positionBefore, positionAfter) :
+            new Range(positionBefore, cursorPosition) // original backsapce
     }
 }
 
