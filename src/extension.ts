@@ -14,6 +14,16 @@ import {
     workspace
 } from 'vscode';
 
+let coupleCharacter = [
+    "()",
+    "[]",
+    "<>",
+    "{}",
+    "''",
+    "``",
+    '""',
+];
+
 /**
  * Extension Method
  */
@@ -230,7 +240,7 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
         let positionAfter = cursorPosition.translate(0, 1);
         let peekBackward = doc.getText(new Range(positionBefore, cursorPosition));
         let peekForward = doc.getText(new Range(cursorPosition, positionAfter));
-        let isAutoClosePair = peekBackward === "(" && peekForward === ")";
+        let isAutoClosePair = ~coupleCharacter.indexOf(peekBackward + peekForward);
         
         return (isAutoClosePair) ?
             new Range(positionBefore, positionAfter) :
