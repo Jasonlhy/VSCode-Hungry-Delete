@@ -8,7 +8,7 @@
         "vscode": "^1.5.0"
     },
     "license": "MIT",
-    "icon" : "images/icon.png",
+    "icon": "images/icon.png",
     "categories": [
         "Keymaps",
         "Other"
@@ -44,8 +44,8 @@
             }
         ],
         "configuration": {
-            "title" : "Hungry Delete Configuration",
-            "type" : "object",
+            "title": "Hungry Delete Configuration",
+            "type": "object",
             "properties": {
                 "hungryDelete.enableSmartBackspace": {
                     "type": "boolean",
