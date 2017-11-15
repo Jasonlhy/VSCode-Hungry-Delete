@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.4.0] - 2017-11-16
+- More hungry approach for let a = |b and a == |b, previously it only delete the space before it, it also delete the operator now
+- Support delete entire auto closing pair if the content is empty and the cursor is put just before the opening pair. For example, (), {}, ``, ""
+
 ## [1.3.3] - 2017-05-13
 - Fix bug: ** located at the start of the line cannot be deleted by ctrl+backspace because !0 is evaluated to false inside if()
 
