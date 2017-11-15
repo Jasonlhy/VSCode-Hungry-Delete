@@ -248,7 +248,7 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
     }
 }
 
-function smartBackspace(): Thenable<Boolean> {
+export function smartBackspace(): Thenable<Boolean> {
     const editor = window.activeTextEditor;
     const doc = editor.document;
     const deleteRanges = editor.selections.map(selection => findSmartBackspaceRange(doc, selection));

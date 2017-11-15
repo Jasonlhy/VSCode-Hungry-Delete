@@ -1,7 +1,7 @@
 //
 // Note: This example test is leveraging the Mocha test framework.
 // Please refer to their documentation on https://mochajs.org/ for help.
-//
+// Please remove the welcome page in orde to run the test case
 
 // The module 'assert' provides assertion methods from node
 import * as assert from 'assert';
@@ -41,6 +41,13 @@ function getText(sline: number, scol: number, eline: number, ecol: number) {
 
 async function ExecuteHungryDelete(title) {
     let r = await myExtension.hungryDelete();
+    if (!r && title) {
+        console.log("execute command failed for: " + title);
+    }
+}
+
+async function ExecuteSmartBackspace(title) {
+    let r = await myExtension.smartBackspace();
     if (!r && title) {
         console.log("execute command failed for: " + title);
     }
@@ -198,7 +205,10 @@ suite("Hungry Delete on line", () => {
         let sampleText =
             "public static void  main\n"
             + "public static void  main \n"
-            + "public static void  main  ";
+            + "public static void  main  \n"
+            + "let a = b;\n"
+            + "let a == b;\n"
+            + "!!??abc\n";
         return InsertSampleText(sampleText);
     });
 
@@ -272,5 +282,114 @@ suite("Hungry Delete on line", () => {
 
         let text = getText(0, 0, 0, 22);
         assert.equal(text, "public static voidmain");
+    });
+
+    // let a = |b;
+    // => let a |b;
+    test("Delete Single Operator", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 3;
+        let selection = new Selection(new Position(lineIdx, 8), new Position(lineIdx, 8));
+        editor.selection = selection;
+        await ExecuteHungryDelete("Delete Single Operator");
+
+        let text = getText(lineIdx, 0, lineIdx, 8);
+        assert.equal(text, "let a b;");
+    });
+
+    // let a == |b;
+    // => let a |b;
+    test("Delete Two Continuous Operator", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 4;
+        let selection = new Selection(new Position(lineIdx, 9), new Position(lineIdx, 9));
+        editor.selection = selection;
+        await ExecuteHungryDelete("Delete Two Continuous Operator");
+
+        let text = getText(lineIdx, 0, lineIdx, 8);
+        assert.equal(text, "let a b;");
+    });
+
+    // !!??|abc
+    // !!|abc
+    test("Delete Different Operator", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 5;
+        let selection = new Selection(new Position(lineIdx, 4), new Position(lineIdx, 4));
+        editor.selection = selection;
+        await ExecuteHungryDelete("Delete Different Operator");
+
+        let text = getText(lineIdx, 0, lineIdx, 5);
+        assert.equal(text, "!!abc");
+    });
+});
+
+suite("Smart backspace on line", () => {
+    // Inesrt the sample text for each text case
+    // main with 12 leading spaces
+    setup(() => {
+        let sampleText =
+            "abcd\n"
+            + "a bcd\n"
+            + "if () {\n"
+            + "if (a) {\n";
+        return InsertSampleText(sampleText);
+    });
+
+    // a|bcd
+    // => bcd
+    test("Delete Single Letter", async () => {
+        let editor = window.activeTextEditor;
+
+        let selection = new Selection(new Position(0, 1), new Position(0, 1));
+        editor.selection = selection;
+        await ExecuteSmartBackspace("Delete Single Letter");
+
+        let text = getText(0, 0, 0, 3);
+        assert.equal(text, "bcd");
+    });
+
+    // a |bcd
+    // => abcd
+    test("Delete Single Space", async () => {
+        let editor = window.activeTextEditor;
+
+        let selection = new Selection(new Position(1, 2), new Position(1, 2));
+        editor.selection = selection;
+        await ExecuteSmartBackspace("Delete Single Space");
+
+        let text = getText(1, 0, 1, 4);
+        assert.equal(text, "abcd");
+    });
+
+    // if (|) {
+    // => if | {
+    test("Delete One Pair", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 2;
+        let selection = new Selection(new Position(lineIdx, 4), new Position(lineIdx, 4));
+        editor.selection = selection;
+        await ExecuteSmartBackspace("Delete One Pair");
+
+        let text = getText(lineIdx, 0, lineIdx, 5);
+        assert.equal(text, "if  {");
+    });
+    
+    // if (|a) {
+    // => if |a) {
+    test("Not Delete One Pair if not empty", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 3;
+        let selection = new Selection(new Position(lineIdx, 4), new Position(lineIdx, 4));
+        editor.selection = selection;
+        await ExecuteSmartBackspace("Not Delete One Pair if not empty");
+
+        let text = getText(lineIdx, 0, lineIdx, 7);
+        assert.equal(text, "if a) {");
     });
 });
