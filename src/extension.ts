@@ -187,7 +187,11 @@ export function hungryDelete(): Thenable<Boolean> {
 
     // it includs the startPosition but exclude the endPositon
     // This is in one transaction
-    return editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
+    const returned = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
+    
+    // Adjust the viewport
+    editor.revealRange(new Range(editor.selection.start, editor.selection.end));
+    return returned;
 }
 
 /**
@@ -253,7 +257,10 @@ export function smartBackspace(): Thenable<Boolean> {
     const doc = editor.document;
     const deleteRanges = editor.selections.map(selection => findSmartBackspaceRange(doc, selection));
 
-    return editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
+    const returned = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
+
+    editor.revealRange(new Range(editor.selection.start, editor.selection.end));
+    return returned;
 }
 
 function registerSmartBackspace() {
