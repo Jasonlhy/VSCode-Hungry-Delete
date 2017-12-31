@@ -190,7 +190,9 @@ export function hungryDelete(): Thenable<Boolean> {
     const returned = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
     
     // Adjust the viewport
-    editor.revealRange(new Range(editor.selection.start, editor.selection.end));
+    if (deleteRanges.length <= 1){
+        editor.revealRange(new Range(editor.selection.start, editor.selection.end));
+    }
     return returned;
 }
 
@@ -259,7 +261,9 @@ export function smartBackspace(): Thenable<Boolean> {
 
     const returned = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
 
-    editor.revealRange(new Range(editor.selection.start, editor.selection.end));
+    if (deleteRanges.length <= 1){
+        editor.revealRange(new Range(editor.selection.start, editor.selection.end));
+    }
     return returned;
 }
 
