@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.4.1] - 2018-01-05
+- Reveal the cursor in the view point if only one selection (credit to tiansin)
+
 ## [1.4.0] - 2017-11-16
 - More hungry approach for let a = |b and a == |b, previously it only delete the space before it, it also delete the operator now
 - Support delete entire auto closing pair if the content is empty and the cursor is put just before the opening pair. For example, (), {}, ``, ""
