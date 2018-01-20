@@ -51,6 +51,11 @@
                     "type": "boolean",
                     "description": "Enable Smart Backsapce",
                     "default": true
+                },
+                "hungryDelete.keepOneSpace" : {
+                    "type": "boolean",
+                    "description": "Keep one space after last word of previous line",
+                    "default": false
                 }
             }
         }

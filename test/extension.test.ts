@@ -378,7 +378,7 @@ suite("Smart backspace on line", () => {
         let text = getText(lineIdx, 0, lineIdx, 5);
         assert.equal(text, "if  {");
     });
-    
+
     // if (|a) {
     // => if |a) {
     test("Not Delete One Pair if not empty", async () => {
@@ -391,5 +391,95 @@ suite("Smart backspace on line", () => {
 
         let text = getText(lineIdx, 0, lineIdx, 7);
         assert.equal(text, "if a) {");
+    });
+});
+
+suite("Smart backspace above line", () => {
+    // Inesrt the sample text for each text case
+    // main with 12 leading spaces
+    setup(() => {
+        let sampleText =
+            "a\n"
+            + "b\n"
+            + "     \n"
+            + "c \n"
+            + "d"
+        return InsertSampleText(sampleText);
+    });
+
+    // a<EOL>
+    // |b
+    // => ab<EOL>
+    test("No Space", async () => {
+        let editor = window.activeTextEditor;
+
+        let selection = new Selection(new Position(1, 0), new Position(1, 0));
+        editor.selection = selection;
+        myExtension.setConfig({
+            'hungryDelete.keepOneSpace': false,
+            'debug': true
+        });
+        await ExecuteSmartBackspace("No Space");
+
+        let text = getText(0, 0, 0, 3);
+        assert.equal(text, "ab");
+    });
+
+    // a<EOL>
+    // |b
+    // => a b<EOL>
+    test("Keep One Space", async () => {
+        let editor = window.activeTextEditor;
+
+        let selection = new Selection(new Position(1, 0), new Position(1, 0));
+        editor.selection = selection;
+        myExtension.setConfig({
+            'hungryDelete.keepOneSpace': true,
+            'debug': true
+        });
+        await ExecuteSmartBackspace("Keep One Space");
+
+        let text = getText(0, 0, 0, 4);
+        assert.equal(text, "a b");
+    });
+
+
+    // b<EOL>
+    // |
+    // c <EOL>
+    // => 
+    // b<EOL>
+    // c <EOL>
+    test("Keep One Space But Empty Line", async () => {
+        let editor = window.activeTextEditor;
+
+        let selection = new Selection(new Position(2, 0), new Position(2, 0));
+        editor.selection = selection;
+        myExtension.setConfig({
+            'hungryDelete.keepOneSpace': true,
+            'debug': true
+        });
+        await ExecuteSmartBackspace("Keep One Space But Empty Line");
+        
+        assert.equal(getText(1, 0, 1, 1), "b");
+        assert.equal(getText(2, 0, 2, 2), "c ");
+    });
+
+    // c <EOL>
+    // d<EOL>
+    // => 
+    // c d<EOL>
+    test("Keep One Space But above line has space", async () => {
+        let editor = window.activeTextEditor;
+
+        let selection = new Selection(new Position(4, 0), new Position(4, 0));
+        editor.selection = selection;
+        myExtension.setConfig({
+            'hungryDelete.keepOneSpace': true,
+            'debug': true
+        });
+        await ExecuteSmartBackspace("Keep One Space But above line has space");
+        
+        assert.equal(getText(3, 0, 3, 3), "c d");
     });
 });

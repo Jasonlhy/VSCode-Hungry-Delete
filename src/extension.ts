@@ -24,6 +24,24 @@ let coupleCharacter = [
     '""',
 ];
 
+// Suppose this is read from user setting like getKeepOneSpaceSetting
+let config = {};
+
+// Written in that way is for testing purpose
+export function setConfig(newConfig: {}) {
+    if (newConfig && Object.keys(newConfig)) {
+        Object.assign(config, newConfig);
+    }
+}
+
+function getKeepOneSpaceSetting() : boolean {
+    if (!config["debug"]) {
+        config['hungryDelete.keepOneSpace'] = workspace.getConfiguration().get('hungryDelete.keepOneSpace');
+    }
+
+    return config['hungryDelete.keepOneSpace'];
+}
+
 /**
  * Extension Method
  */
@@ -59,7 +77,7 @@ String.prototype.findLastIndex = function (predicate: (theChar: string) => Boole
 
 
 /**
- * Back trace the first non-empty character position in the above line, used as start positon to be deleted
+ * (Assume no triming space) Back trace the first non-empty character position in the above line, used as start positon to be deleted
  *
  * @param {TextDocument} doc
  * @param {number} cursorLineNumber
@@ -188,9 +206,9 @@ export function hungryDelete(): Thenable<Boolean> {
     // it includs the startPosition but exclude the endPositon
     // This is in one transaction
     const returned = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
-    
+
     // Adjust the viewport
-    if (deleteRanges.length <= 1){
+    if (deleteRanges.length <= 1) {
         editor.revealRange(new Range(editor.selection.start, editor.selection.end));
     }
     return returned;
@@ -221,7 +239,7 @@ function registerHungryDelete() {
  * @param {Selection} selection selection Selection of cursor
  * @returns {Range}
  */
-function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range {
+function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range | [Position, Range] {
     if (!selection.isEmpty) {
         return new Range(selection.start, selection.end);
     }
@@ -235,19 +253,35 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
         let aboveLine = doc.lineAt(cursorLineNumber - 1);
         let aboveRange = aboveLine.range;
 
-        return (aboveLine.isEmptyOrWhitespace) ?
-            new Range(aboveRange.start, aboveRange.start.translate(1, 0)) :
-            new Range(backtraceAboveLine(doc, cursorLineNumber), cursorPosition);
+        if (aboveLine.isEmptyOrWhitespace) {
+            return new Range(aboveRange.start, aboveRange.start.translate(1, 0));
+        } else {
+            let lastWordPosition = backtraceAboveLine(doc, cursorLineNumber);
+            let keepOneSpaceSetting = getKeepOneSpaceSetting();
+            let a = doc.getText(new Range(lastWordPosition.translate(0, -1), lastWordPosition));
+            let isKeepOneSpace = keepOneSpaceSetting &&
+                // For better UX ?
+                // Don't add space if current line is empty
+                !cursorLine.isEmptyOrWhitespace &&
+                // Only add space if there is no space
+                /\S/.test(a);
+            if (isKeepOneSpace) {
+                return [lastWordPosition, new Range(lastWordPosition, cursorPosition)];
+            } else {
+                return new Range(lastWordPosition, cursorPosition);
+            }
+        }
     } else if (cursorPosition.line == 0 && cursorPosition.character == 0) {
         // edge case, otherwise it will failed
         return new Range(cursorPosition, cursorPosition);
     } else {
+        // inline
         let positionBefore = cursorPosition.translate(0, -1);
         let positionAfter = cursorPosition.translate(0, 1);
         let peekBackward = doc.getText(new Range(positionBefore, cursorPosition));
         let peekForward = doc.getText(new Range(cursorPosition, positionAfter));
         let isAutoClosePair = ~coupleCharacter.indexOf(peekBackward + peekForward);
-        
+
         return (isAutoClosePair) ?
             new Range(positionBefore, positionAfter) :
             new Range(positionBefore, cursorPosition) // original backsapce
@@ -259,11 +293,20 @@ export function smartBackspace(): Thenable<Boolean> {
     const doc = editor.document;
     const deleteRanges = editor.selections.map(selection => findSmartBackspaceRange(doc, selection));
 
-    const returned = editor.edit(editorBuilder => deleteRanges.forEach(range => editorBuilder.delete(range)));
+    const returned = editor.edit(editorBuilder => deleteRanges.forEach(range => {
+        if (range instanceof Range) {
+            editorBuilder.delete(range)
+        } else {
+            let position = range[0];
+            editorBuilder.insert(position, " ");
+            editorBuilder.delete(range[1]);
+        }
+    }));
 
-    if (deleteRanges.length <= 1){
+    if (deleteRanges.length <= 1) {
         editor.revealRange(new Range(editor.selection.start, editor.selection.end));
     }
+
     return returned;
 }
 
