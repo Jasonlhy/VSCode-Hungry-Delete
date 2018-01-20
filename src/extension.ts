@@ -128,7 +128,7 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
         return wordRangeBefore.start;
     } else {
         // the cursor is at a whitespace
-        let nonEmptyCharIndex = text.findLastIndex(theChar => !/s/.test(theChar), charIndexBefore);
+        let nonEmptyCharIndex = text.findLastIndex(theChar => /\S/.test(theChar), charIndexBefore);
         let offset = charIndexBefore - nonEmptyCharIndex;
         let deleteWhiteSpaceOnly = (offset > 1);
 
@@ -143,18 +143,8 @@ function backtraceInLine(doc: TextDocument, cursorLine: TextLine, cursorPosition
             } else {
                 // For edge case : If there is Word Seperator, e.g. @ or =  - its word range is undefined
                 // the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
-                let idx = nonEmptyCharIndex;
-                let separatorChar = text.charAt(idx);
-                if (separatorChar === " ") {
-                    idx = text.findLastIndex(theChar => !/s/.test(theChar), idx - 1);
-                    if (idx < 0) {
-                        return new Position(cursorPosition.line, 0);
-                    } else {
-                        separatorChar = text.charAt(idx);
-                    }
-                }
-
-                const nonSeparatorIndex = text.findLastIndex(theChar => theChar !== separatorChar, idx - 1);
+                let separatorChar = text.charAt(nonEmptyCharIndex);
+                const nonSeparatorIndex = text.findLastIndex(theChar => theChar !== separatorChar, nonEmptyCharIndex - 1);
                 const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
 
                 return new Position(cursorPosition.line, endIdx);
