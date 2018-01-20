@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+## [1.5.0] - 2018-01-21
+- Keep one space after last word of previous line after smart backspace
+- Simplify some logic in code
+
 ## [1.4.1] - 2018-01-05
 - Reveal the cursor in the view point if only one selection (credit to tiansin)
 

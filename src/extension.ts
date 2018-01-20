@@ -24,16 +24,26 @@ let coupleCharacter = [
     '""',
 ];
 
-// Suppose this is read from user setting like getKeepOneSpaceSetting
+/**
+ * The actual configuration object the extension depends on.
+ * Suppose its content is read from user setting like getKeepOneSpaceSetting
+ */
 let config = {};
 
-// Written in that way is for testing purpose
+/**
+ * This function is for testing purpose
+ * 
+ * @param newConfig Read every key into internal config
+ */
 export function setConfig(newConfig: {}) {
     if (newConfig && Object.keys(newConfig)) {
         Object.assign(config, newConfig);
     }
 }
 
+/**
+ * Read the user setting into internal config object if not debug
+ */
 function getKeepOneSpaceSetting() : boolean {
     if (!config["debug"]) {
         config['hungryDelete.keepOneSpace'] = workspace.getConfiguration().get('hungryDelete.keepOneSpace');

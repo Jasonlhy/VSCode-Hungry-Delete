@@ -51,6 +51,18 @@ You have to press `backspace` once
 
 ![After Smart Backspace](images/after_smartbackspace.gif)
 
+### Keep One Space
+
+Set to `true` to keep at least one space after last word of previous line with smart backspace. By default this is `false`.
+
+![Keep One Space](images/keep_one_space.gif)
+
+```json
+{
+    "hungryDelete.keepOneSpace" : true
+}
+```
+
 ## Support Multiple Cursor
 
 ![Smart Backspace Multiple Cursor](images/smartbackspace_multicursor.gif)

@@ -2,7 +2,7 @@
     "name": "hungry-delete",
     "displayName": "Hungry Delete",
     "description": "To delete an entire block of whitespace or tab, and reduce the time programmers need to press backspace",
-    "version": "1.4.1",
+    "version": "1.5.0",
     "publisher": "jasonlhy",
     "engines": {
         "vscode": "^1.5.0"
@@ -54,7 +54,7 @@
                 },
                 "hungryDelete.keepOneSpace" : {
                     "type": "boolean",
-                    "description": "Keep one space after last word of previous line",
+                    "description": "Keep at least one space after last word of previous line with smart backspace",
                     "default": false
                 }
             }
