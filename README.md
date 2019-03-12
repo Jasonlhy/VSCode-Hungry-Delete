@@ -1,25 +1,25 @@
 # Hungry Delete Extension for Visual Studio Code
 Hungry Delete Extension for Visual Studio Code
 
-I find it very annoying to press backspace multiple times to remove the leading tabs or whitespaces in order to return to the previos end of the line. 
+I find it very annoying to press backspace multiple times to remove the leading tabs or whitespaces in order to return to the previous end of the line. 
 
 Therefore, I created this extension, it overrides `ctrl+backspace` key binding, once `ctrl+backspace` is pressed, a command is executed. 
 
-Later I found that sometime I just want to delete the upper line and keep the indent (Personally I don't use backspace to adjust the indent, I use `ctrl+[`), so I added the smart backspace feafure which overrides `backspace`.
+Later I found that sometimes I just want to delete the upper line and keep the indent (Personally I don't use backspace to adjust the indent, I use `ctrl+[`), so I added the smart backspace feature which overrides `backspace`.
 
 # Features
 
 ## Hungry Delete
 
-To delete **ALL** tab or whitespaces before the cursor, until it reaches a non empty character.
+To delete **ALL** tab or whitespaces before the cursor, until it reaches a non-empty character.
 
 - Windows and Linux : Press `ctrl+backspace` 
 - Mac : Press `alt+backspace`
 
 ## Smart Backspace
-To delete upper empty line or delete all tabs or whitespaces until the end of the previous line.
+To delete the upper empty line or delete all tabs or whitespaces until the end of the previous line.
 
-- Windows and Linux and Mac : Press `backspace` 
+- Windows and Linux and Mac: Press `backspace` 
 
 # Hungry Delete Demo
 
@@ -29,19 +29,19 @@ You have to press `ctrl+backspace` multiple times to delete the leading spaces a
 ![Before Hungry Delete](images/before.gif)
 
 ## After Hungry Delete
-You only have to press `ctrl+backspace` **ONCE** to delete the leading spaces and tabs until you reaches a non-empty character
+You only have to press `ctrl+backspace` **ONCE** to delete the leading spaces and tabs until you reach a non-empty character
 
 ![After Hungry Delete](images/after.gif)
 
 ## Support Multiple Cursor
 
-![Hugry Delete Multiple Cursor](images/multiple.gif)
+![Hungry Delete Multiple Cursor](images/multiple.gif)
 
 # Smart Backspace Demo
 
 ## Before Smart Backspace
 
-You have to press `backspace` multiple times to delete the leading tabs or space to upper line. (Or press upper arrow and press `ctrl+k`)
+You have to press `backspace` multiple times to delete the leading tabs or space to upper line. (Or press the upper arrow and press `ctrl+k`)
 
 ![Before Smart Backspace](images/before_smartbackspace.gif)
 
@@ -53,7 +53,7 @@ You have to press `backspace` once
 
 ### Keep One Space
 
-Set to `true` to keep at least one space after last word of previous line with smart backspace. By default this is `false`.
+Set to `true` to keep at least one space after the last word of the previous line with smart backspace. By default, this is `false`.
 
 ![Keep One Space](images/keep_one_space.gif)
 
@@ -73,24 +73,26 @@ Set to `true` to keep at least one space after last word of previous line with s
 3. Edit `src/extension.ts`
 
 # Conflict With Vim Extension
-Becasue [Vim extension](https://marketplace.visualstudio.com/items?itemName=jasonlhy.hungry-delete) define its own command for `ctrl+backspace` and `backspace`. To work with [Vim extension](https://marketplace.visualstudio.com/items?itemName=jasonlhy.hungry-delete), you have to explicitly define these two key bindings map to the commands of this extension by adding following code snippet into `keybindings.json`
+Because [Vim extension](https://marketplace.visualstudio.com/items?itemName=jasonlhy.hungry-delete) define its own `vim_backspace`. In order to work with [Vim extension](https://marketplace.visualstudio.com/items?itemName=jasonlhy.hungry-delete) in insert mode, normal mode and visual mode,  just add the following setting into `keybindings.json`
 
 ```json
+    // Cancel the original vim backspace
     {
         "key": "backspace",
-        "command": "extension.smartBackspace",
-        "when": "config.hungryDelete.enableSmartBackspace && editorTextFocus && !editorReadonly"
+        "command": "-extension.vim_backspace",
+        "when": "editorTextFocus && vim.active && !inDebugRepl"
     },
+    // Enable the vim backspace only in search mode
     {
-        "key": "ctrl+backspace",
-        "command": "extension.hungryDelete",
-        "when": "editorTextFocus && !editorReadonly"
-    }
+        "key": "backspace",
+        "command": "extension.vim_backspace",
+        "when": "editorTextFocus && vim.active && !inDebugRepl && vim.mode == 'SearchInProgressMode'"
+    },
 ```
 
 ## Steps
 
-1. Click "No" if VSCode detected that this extension have conflict with Vim extension
+1. Click "No" if VSCode detected that this extension has a conflict with Vim extension
 
     ![Conflict](images/conflict.png)
 
@@ -103,21 +105,20 @@ Becasue [Vim extension](https://marketplace.visualstudio.com/items?itemName=jaso
     ![Step 3](images/key3.png)
 
 # Implementation Note
-This command aims to be backward compatiable with exisiting implementation of `ctrl+backspace` a.k.a `deleteWorldLeft` 
-becasue exisiting `ctrl+backspace` actually is a hungry delete on the same line with some optimizations
-for source code editings.
+This command aims to be backward compatible with existing implementation of `ctrl+backspace` a.k.a `deleteWorldLeft` 
+because existing `ctrl+backspace` actually is a hungry delete on the same line with some optimizations
+for source code editing.
 
-In previous version which supports only a single cursor, the code just invokes `deleteWordLeft` command to delete the word before the cursor.
-In order to support multiple cursors, I need to invoke **each** cursor to `deleteWorldLeft`, but I can't find any API available 
-so I write a mock implementation of `deleteWorldLeft`. 
+In the previous version which supports only a single cursor, the code just invokes `deleteWordLeft` command to delete the word before the cursor.
+In order to support multiple cursors, I need to invoke **each** cursor to `deleteWorldLeft`, but I can't find any API available so I write a mock implementation of `deleteWorldLeft`. 
 
-## Optimizations for source code editings.
-As mentioned before, the exisiting `ctrl+backspace` is a hungry delete inline with some optimizations. The examples uses following syntax to illustrates the ideas
-- | : the cursor position
+## Optimisations for source code editing.
+As mentioned before, the existing `ctrl+backspace` is a hungry delete inline with some optimizations. The examples use the following syntax to illustrates the ideas
+- |: the cursor position
 - => : (after pressing ctrl+backspace)
 - Trivial : Trivial deleteWordLeft
-- VSC : Visual Studio Code exisiting deleteWordLeft
-- Current : Current implementation that is not the same as VSC
+- VSC: Visual Studio Code existing deleteWordLeft
+- Current: Current implementation that is not the same as VSC
 
 ### World separators
 Visual Studio Code a.k.a VSC have configurable world separators (e.g. @ or =), which will be stopped in `deleteWorldLeft` 
@@ -139,8 +140,8 @@ Example 3: (This feature is not yet implemented)
 - VSC:  "This is My@@==|"  => "This is My|"
 - Current:  "This is My@@==|"  => "This is My@@|" =>  => "This is My|"
 
-### Delete a whitespace with previous word
-If there is **ONLY** a white space before the cursor, VSC `deleteWordLeft` will delete the whitespace with previous word.
+### Delete one whitespace with the previous word
+If there is **ONLY** a white space before the cursor, VSC `deleteWordLeft` will delete the whitespace with the previous word.
 Example:
 - Trivial:  "This is |"  => "This is|"
 - VSC:  "This is |"  => "This |"
@@ -148,14 +149,14 @@ Example:
 ## Limitation of API
 ~~- Only can register the word pattern but it cannot be retrieved~~
 
-After a fews month I found out that the API actually [can retrieve the word pattern](https://code.visualstudio.com/docs/extensionAPI/vscode-api#_a-nameworkspaceconfigurationaspan-classcodeitem-id867workspaceconfigurationspan), I think current implementation is acceptable and I am lazy to change it, but I am welcome with pull request.
+After a few months I found out that the API actually [can retrieve the word pattern](https://code.visualstudio.com/docs/extensionAPI/vscode-api#_a-nameworkspaceconfigurationaspan-classcodeitem-id867workspaceconfigurationspan), I think the current implementation is acceptable and I am lazy to change it, but I am welcome with the pull request.
 
 - The word range is undefined when the cursor is placed at word separators
 
 # Setting
 
 ## Change the key binding
-By default, hungry delete command maps to `ctrl+backspace` on windows and linux, `alt+backspace` on mac.
+By default, hungry delete command maps to `ctrl+backspace` on windows and Linux, `alt+backspace` on mac.
 The following snippet can be placed inside `keybings.json` file to override the default key binding,
 it sets `ctrl+shift+backspace` for the command.
 
@@ -169,7 +170,7 @@ it sets `ctrl+shift+backspace` for the command.
 
 ## Disable smart backspace
 
-To disable smart backspace, just set `hungryDelete.enableSmartBackspace` to be false in setting.
+To disable smart backspace, just set `hungryDelete.enableSmartBackspace` to be false in the setting.
 
 ```json
 {
