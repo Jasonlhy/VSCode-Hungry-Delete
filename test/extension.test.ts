@@ -10,6 +10,12 @@ import * as assert from 'assert';
 // as well as import your extension to test it
 import { Range, window, Position, TextEditor, TextDocument, Selection } from 'vscode';
 import * as myExtension from '../src/extension';
+import { HungryDeleteConfiguration, ConfigurationProvider } from '../src/ConfigurationProvider'
+
+// This whole testing script is integration testing
+// 1. It fires up the vscode and the extension
+// 2. Insert code sample, abd execute the extension function
+// 3. Assert the result
 
 /**
  * Insert sample text for testing
@@ -65,6 +71,8 @@ suite("Hungry Delete across line", () => {
     // Inesrt the sample text for each text case
     // main with 12 leading spaces
     setup(() => {
+        myExtension.setConfig(ConfigurationProvider.getDefaultConfiguration())
+
         let sampleText =
             "public\n"
             + "static\n"
@@ -173,7 +181,6 @@ suite("Hungry Delete across line", () => {
         assert.equal(line, "main");
     });
 
-
     // public
     // |static
     //
@@ -256,7 +263,6 @@ suite("Hungry Delete on line", () => {
         let text = getText(2, 0, 2, 24);
         assert.equal(text, "public static void  main");
     });
-
 
     //    public static |void main
     // => public |void main
@@ -416,8 +422,8 @@ suite("Smart backspace above line", () => {
         let selection = new Selection(new Position(1, 0), new Position(1, 0));
         editor.selection = selection;
         myExtension.setConfig({
-            'hungryDelete.keepOneSpace': false,
-            'debug': true
+            KeepOneSpace: false,
+            CoupleCharacters: ConfigurationProvider.CoupleCharacters
         });
         await ExecuteSmartBackspace("No Space");
 
@@ -434,15 +440,14 @@ suite("Smart backspace above line", () => {
         let selection = new Selection(new Position(1, 0), new Position(1, 0));
         editor.selection = selection;
         myExtension.setConfig({
-            'hungryDelete.keepOneSpace': true,
-            'debug': true
+            KeepOneSpace: true,
+            CoupleCharacters: ConfigurationProvider.CoupleCharacters
         });
         await ExecuteSmartBackspace("Keep One Space");
 
         let text = getText(0, 0, 0, 4);
         assert.equal(text, "a b");
     });
-
 
     // b<EOL>
     // |
@@ -456,8 +461,8 @@ suite("Smart backspace above line", () => {
         let selection = new Selection(new Position(2, 0), new Position(2, 0));
         editor.selection = selection;
         myExtension.setConfig({
-            'hungryDelete.keepOneSpace': true,
-            'debug': true
+            KeepOneSpace: true,
+            CoupleCharacters: ConfigurationProvider.CoupleCharacters
         });
         await ExecuteSmartBackspace("Keep One Space But Empty Line");
         
@@ -474,9 +479,9 @@ suite("Smart backspace above line", () => {
 
         let selection = new Selection(new Position(4, 0), new Position(4, 0));
         editor.selection = selection;
-        myExtension.setConfig({
-            'hungryDelete.keepOneSpace': true,
-            'debug': true
+        myExtension.setConfig({ 
+            KeepOneSpace: true,
+            CoupleCharacters: ConfigurationProvider.CoupleCharacters
         });
         await ExecuteSmartBackspace("Keep One Space But above line has space");
         

@@ -11,45 +11,24 @@ import {
     TextDocument,
     TextLine,
     Selection,
-    workspace
 } from 'vscode';
 
-let coupleCharacter = [
-    "()",
-    "[]",
-    "<>",
-    "{}",
-    "''",
-    "``",
-    '""',
-];
+import { 
+    ConfigurationProvider,
+    HungryDeleteConfiguration 
+}  from './ConfigurationProvider'
+
+const configProvider = new ConfigurationProvider();
 
 /**
- * The actual configuration object the extension depends on.
- * Suppose its content is read from user setting like getKeepOneSpaceSetting
- */
-let config = {};
-
-/**
- * This function is for testing purpose
+ * Override all the confiugrations of the config provider. Use it after the extension is actived
  * 
+ * This function is designed for testing purpose for I can "inject the dependency" of the config in testing scripts
+ *
  * @param newConfig Read every key into internal config
  */
-export function setConfig(newConfig: {}) {
-    if (newConfig && Object.keys(newConfig)) {
-        Object.assign(config, newConfig);
-    }
-}
-
-/**
- * Read the user setting into internal config object if not debug
- */
-function getKeepOneSpaceSetting() : boolean {
-    if (!config["debug"]) {
-        config['hungryDelete.keepOneSpace'] = workspace.getConfiguration().get('hungryDelete.keepOneSpace');
-    }
-
-    return config['hungryDelete.keepOneSpace'];
+export function setConfig(newConfig: HungryDeleteConfiguration) {
+    configProvider.setConfiguration(newConfig)
 }
 
 /**
@@ -85,7 +64,6 @@ String.prototype.findLastIndex = function (predicate: (theChar: string) => Boole
     return -1;
 }
 
-
 /**
  * (Assume no triming space) Back trace the first non-empty character position in the above line, used as start positon to be deleted
  *
@@ -114,7 +92,6 @@ function backtraceAboveLine(doc: TextDocument, cursorLineNumber: number): Positi
 
     return startPosition;
 }
-
 
 /**
  * Back trace the first index of word or first index of continuous whitespaces or index of word Separator, used as start positon to be deleted
@@ -190,7 +167,6 @@ function findDeleteRange(doc: TextDocument, selection: Selection): Range {
     return new Range(startPosition, endPosition);
 }
 
-
 /**
  *  The hungry delete callback registered in the command
  *
@@ -257,7 +233,7 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
             return new Range(aboveRange.start, aboveRange.start.translate(1, 0));
         } else {
             let lastWordPosition = backtraceAboveLine(doc, cursorLineNumber);
-            let keepOneSpaceSetting = getKeepOneSpaceSetting();
+            let keepOneSpaceSetting = configProvider.getConfiguration().KeepOneSpace;
             let a = doc.getText(new Range(lastWordPosition.translate(0, -1), lastWordPosition));
             let isKeepOneSpace = keepOneSpaceSetting &&
                 // For better UX ?
@@ -280,7 +256,7 @@ function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range
         let positionAfter = cursorPosition.translate(0, 1);
         let peekBackward = doc.getText(new Range(positionBefore, cursorPosition));
         let peekForward = doc.getText(new Range(cursorPosition, positionAfter));
-        let isAutoClosePair = ~coupleCharacter.indexOf(peekBackward + peekForward);
+        let isAutoClosePair = ~configProvider.getConfiguration().CoupleCharacters.indexOf(peekBackward + peekForward);
 
         return (isAutoClosePair) ?
             new Range(positionBefore, positionAfter) :
