@@ -8,20 +8,19 @@ import * as assert from 'assert';
 
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
-import { Range, window, Position, TextEditor, TextDocument, Selection } from 'vscode';
+import { Range, window, Position, Selection } from 'vscode';
 import * as myExtension from '../src/extension';
-import { HungryDeleteConfiguration, ConfigurationProvider } from '../src/ConfigurationProvider'
+import { ConfigurationProvider } from '../src/ConfigurationProvider'
 
 // This whole testing script is integration testing
 // 1. It fires up the vscode and the extension
-// 2. Insert code sample, abd execute the extension function
+// 2. Insert code sample, and execute the extension function
 // 3. Assert the result
 
 /**
  * Insert sample text for testing
  */
 async function InsertSampleText(sampleText: string): Promise<void> {
-
     let editor = window.activeTextEditor;
     let result = await editor.edit(editorBuilder => {
         let position = new Position(0, 0);
