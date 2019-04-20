@@ -100,9 +100,14 @@ function findPreviousNonEmptyLine(cursorLineNumber: number, doc: TextDocument): 
     return null;
 }
 
-interface SmartBackspaceDeletionRange {
-    IsKeepOneSpace?: boolean
-    DeletionRange: Range
+/**
+ * Contains the information of deletion range of smart backspace based on each cursor selection
+ *
+ * @interface SmartBackspaceDeletion
+ */
+interface SmartBackspaceDeletion {
+    isKeepOneSpace?: boolean
+    range: Range
 }
 
 /**
@@ -110,16 +115,17 @@ interface SmartBackspaceDeletionRange {
  *
  * This is used to perform a mock version of "deleteWorldLeft"
  *
- * @param {TextDocument} doc
- * @param {TextLine} cursorLine
- * @param {Position} cursorPosition
+ * @param {TextDocument} textDocument - Document working on
+ * @param {TextLine} textLine - TextLine of cursor selection
+ * @param {Position} position - Position of active cursor selection
+ * 
  * @returns {Position} first index of word or first index of continuous whitespaces or index of word Separator
  */
-function findStartPositionInCurrentLine(doc: TextDocument, cursorLine: TextLine, cursorPosition: Position): Position {
-    const text = cursorLine.text;
-    let charIndexBefore = cursorPosition.character - 1;
-    let wordRange = doc.getWordRangeAtPosition(cursorPosition);
-    let wordRangeBefore = doc.getWordRangeAtPosition(new Position(cursorPosition.line, charIndexBefore));
+function findStartPositionInCurrentLine(textDocument: TextDocument, textLine: TextLine, position: Position): Position {
+    const text = textLine.text;
+    let charIndexBefore = position.character - 1;
+    let wordRange = textDocument.getWordRangeAtPosition(position);
+    let wordRangeBefore = textDocument.getWordRangeAtPosition(new Position(position.line, charIndexBefore));
 
     // the cursor is at within word, end of word
     // and special case aaa |bbb but not include aaa |EOL
@@ -133,12 +139,12 @@ function findStartPositionInCurrentLine(doc: TextDocument, cursorLine: TextLine,
     let deleteWhiteSpaceOnly = (offset > 1);
 
     if (deleteWhiteSpaceOnly) {
-        return new Position(cursorPosition.line, nonEmptyCharIndex + 1);
+        return new Position(position.line, nonEmptyCharIndex + 1);
     }
 
     // Delete a space with the entire word at left
     // in consistent to the exisiting implementation of "deleteWorldLeft"
-    wordRange = doc.getWordRangeAtPosition(new Position(cursorPosition.line, nonEmptyCharIndex));
+    wordRange = textDocument.getWordRangeAtPosition(new Position(position.line, nonEmptyCharIndex));
     if (wordRange) {
         return wordRange.start;
     }
@@ -149,32 +155,32 @@ function findStartPositionInCurrentLine(doc: TextDocument, cursorLine: TextLine,
     const nonSeparatorIndex = text.findLastIndex(theChar => theChar !== separatorChar, nonEmptyCharIndex - 1);
     const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
 
-    return new Position(cursorPosition.line, endIdx);
+    return new Position(position.line, endIdx);
 }
 
 /**
  * Search the range to be deleted for hungry delete, search the start position from a cursor positoin
  *
- * @param {TextDocument} doc TextDocument of Editor
- * @param {Selection} selection Selection of cursor
- * @returns {Range} if the selection is valid for hungry delete above line
+ * @param {TextDocument} textDocument - TextDocument working on
+ * @param {Selection} selection - A cursor selection of document
+ * @returns {Range} Range to be detected based on the input selection
  */
-function searchDeletionRange(doc: TextDocument, selection: Selection): Range {
+function findHungryDeletionRange(textDocument: TextDocument, selection: Selection): Range {
     if (!selection.isEmpty) {
         return new Range(selection.start, selection.end);
     }
 
-    const cursorPosition = selection.active;
-    const cursorLineNumber = cursorPosition.line;
-    const cursorLine = doc.lineAt(cursorPosition);
+    const activePosition = selection.active;
+    const lineNumber = activePosition.line;
+    const textLine = textDocument.lineAt(activePosition);
 
-    const hungryDeleteAcrossLine = cursorLine.isEmptyOrWhitespace || (cursorPosition.character <= cursorLine.firstNonWhitespaceCharacterIndex);
+    const hungryDeleteAcrossLine = textLine.isEmptyOrWhitespace || (activePosition.character <= textLine.firstNonWhitespaceCharacterIndex);
 
     /* Determine the delete range */
     const startPosition = (hungryDeleteAcrossLine)
-        ? findStartPositionInPreviousLine(doc, cursorLineNumber)
-        : findStartPositionInCurrentLine(doc, cursorLine, cursorPosition);
-    const endPosition = cursorPosition;
+        ? findStartPositionInPreviousLine(textDocument, lineNumber)
+        : findStartPositionInCurrentLine(textDocument, textLine, activePosition);
+    const endPosition = activePosition;
 
     return new Range(startPosition, endPosition);
 }
@@ -182,7 +188,7 @@ function searchDeletionRange(doc: TextDocument, selection: Selection): Range {
 /**
  *  The hungry delete callback registered in the command
  *
- *  1. It search the deletion range based on each selection/cursor position
+ *  1. It searches the deletion range based on each selection position (a.k.a cursor position)
  *  2. Call EditorBuild to delete the deletion ranges from step 1
  *
  * @export
@@ -190,8 +196,8 @@ function searchDeletionRange(doc: TextDocument, selection: Selection): Range {
  */
 export function hungryDelete(): Thenable<Boolean> {
     const editor = window.activeTextEditor;
-    const doc = editor.document;
-    const deleteRanges = editor.selections.map(selection => searchDeletionRange(doc, selection));
+    const document = editor.document;
+    const deleteRanges = editor.selections.map(selection => findHungryDeletionRange(document, selection));
 
     // It includs the startPosition but exclude the endPositon
     // This is an async operation and is in one transaction
@@ -228,80 +234,92 @@ function registerHungryDelete() {
 /**
  *  Find the range to be deleted for smart backspace, backtracing the start position from a cursor positoin
  *
- * @param {TextDocument} doc TextDocument of Editor
- * @param {Selection} selection selection Selection of cursor
- * @returns {Range}
+ * @param {TextDocument} textDocument - TextDocument of Editor
+ * @param {Selection} selection - A cursor selection of document
+ * @returns {SmartBackspaceDeletion} SmartBackspaceDeletion, it includes the range to be detected based on the input selection, and whether to keep one space
  */
-function findSmartBackspaceRange(doc: TextDocument, selection: Selection): Range | [Position, Range] {
+function findSmartBackspaceRange(textDocument: TextDocument, selection: Selection): SmartBackspaceDeletion {
     if (!selection.isEmpty) {
-        return new Range(selection.start, selection.end);
+        return {
+            range: new Range(selection.start, selection.end)
+         };
     }
 
-    const cursorPosition = selection.active;
-    const cursorLineNumber = cursorPosition.line;
-    const cursorLine = doc.lineAt(cursorPosition);
+    const position = selection.active;
+    const lineNumber = position.line;
+    const textLine = textDocument.lineAt(position);
 
-    let isSmartBackspace = (cursorLineNumber > 0) && (cursorPosition.character <= cursorLine.firstNonWhitespaceCharacterIndex);
+    let isSmartBackspace = (lineNumber > 0) && (position.character <= textLine.firstNonWhitespaceCharacterIndex);
+
+    // Edge case, otherwise it will failed
+    const isHeadOfDocument = position.line == 0 && position.character == 0;
+    if (isHeadOfDocument) {
+        return {
+            range: new Range(position, position)
+        };
+    }
 
     if (isSmartBackspace) {
-        let aboveLine = doc.lineAt(cursorLineNumber - 1);
+        let aboveLine = textDocument.lineAt(lineNumber - 1);
         let aboveRange = aboveLine.range;
 
         if (aboveLine.isEmptyOrWhitespace) {
-            return new Range(aboveRange.start, aboveRange.start.translate(1, 0));
+            return {
+                range: new Range(aboveRange.start, aboveRange.start.translate(1, 0))
+            };
         }
 
-        let deletionStartPosition = findStartPositionInPreviousLine(doc, cursorLineNumber);
-        let keepOneSpaceSetting = configProvider.getConfiguration().KeepOneSpace;
-        let deletionStartPositionChar = doc.getText(new Range(deletionStartPosition.translate(0, -1), deletionStartPosition));
+        let startPosition = findStartPositionInPreviousLine(textDocument, lineNumber);
+        let isKeepOneSpaceInSetting = configProvider.getConfiguration().KeepOneSpace;
+        let startPositionChar = textDocument.getText(new Range(startPosition.translate(0, -1), startPosition));
 
         // For better UX ?
         // 1. Don't add space if current line is empty
         // 2. Only add space if start positon char is not space
-        let isKeepOneSpace = keepOneSpaceSetting &&
-                            !cursorLine.isEmptyOrWhitespace &&
-                            /\S/.test(deletionStartPositionChar);
+        let isKeepOneSpace = isKeepOneSpaceInSetting &&
+                            !textLine.isEmptyOrWhitespace &&
+                            /\S/.test(startPositionChar);
 
         if (isKeepOneSpace) {
-            return [deletionStartPosition, new Range(deletionStartPosition, cursorPosition)];
+            return {
+                isKeepOneSpace: true,
+                range: new Range(startPosition, position)
+            };
         } else {
-            return new Range(deletionStartPosition, cursorPosition);
+            return {
+                range: new Range(startPosition, position)
+            };
         }
     }
 
-    if (cursorPosition.line == 0 && cursorPosition.character == 0) {
-        // edge case, otherwise it will failed
-        return new Range(cursorPosition, cursorPosition);
-    }
-
-    return findInlineBackspaceRange(cursorPosition, doc);
+    return {
+        range: findInlineBackspaceRange(position, textDocument)
+    };
 }
 
 /**
- * If using inline backspace, find the deletion range
+ * Find the deletion range using simple backspace in current line
  *
- * @param {Position} cursorPosition
- * 
- * @param {TextDocument} doc
- * 
- * @returns {Range}
+ * @param {Position} position - Position of the active cursor selection
+ * @param {TextDocument} textDocument - TextDocument working on
+ * @returns {Range} The range to be deleted using simple backspace
  */
-function findInlineBackspaceRange(cursorPosition: Position, doc: TextDocument) : Range {
-    let positionBefore = cursorPosition.translate(0, -1);
-    let positionAfter = cursorPosition.translate(0, 1);
-    let peekBackward = doc.getText(new Range(positionBefore, cursorPosition));
-    let peekForward = doc.getText(new Range(cursorPosition, positionAfter));
+function findInlineBackspaceRange(position: Position, textDocument: TextDocument) : Range {
+    let positionBefore = position.translate(0, -1);
+    let positionAfter = position.translate(0, 1);
+    let peekBackward = textDocument.getText(new Range(positionBefore, position));
+    let peekForward = textDocument.getText(new Range(position, positionAfter));
     let isAutoClosePair = ~configProvider.getConfiguration().CoupleCharacters.indexOf(peekBackward + peekForward);
-    
+
     return (isAutoClosePair) ?
         new Range(positionBefore, positionAfter) :
-        new Range(positionBefore, cursorPosition);  // original backsapce
+        new Range(positionBefore, position);  // original backsapce
 }
 
 /**
  *  The smart backspace callback registered in the command
  *
- *  1. It search the deletion range based on each selection/cursor position
+ *  1. It searches the deletion range based on each selection position (a.k.a cursor position)
  *  2. Call EditorBuilder to delete the deletion ranges from step 1
  *
  * @export
@@ -309,22 +327,22 @@ function findInlineBackspaceRange(cursorPosition: Position, doc: TextDocument) :
  */
 export function smartBackspace(): Thenable<Boolean> {
     const editor = window.activeTextEditor;
-    const doc = editor.document;
-    const deleteRanges = editor.selections.map(selection => findSmartBackspaceRange(doc, selection));
+    const document = editor.document;
+    const deletions = editor.selections.map(selection => findSmartBackspaceRange(document, selection));
 
     const returned = editor.edit(editorBuilder => {
-        deleteRanges.forEach(range => {
-            if (range instanceof Range) {
-                editorBuilder.delete(range)
+        deletions.forEach(deletion => {
+            if (deletion.isKeepOneSpace) {
+                let range = deletion.range;
+                editorBuilder.insert(range.start, " ");
+                editorBuilder.delete(range);
             } else {
-                let position = range[0];
-                editorBuilder.insert(position, " ");
-                editorBuilder.delete(range[1]);
+                editorBuilder.delete(deletion.range)
             }
         })
     });
 
-    if (deleteRanges.length <= 1) {
+    if (deletions.length <= 1) {
         editor.revealRange(new Range(editor.selection.start, editor.selection.end));
     }
 
