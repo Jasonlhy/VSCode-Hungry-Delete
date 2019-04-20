@@ -117,7 +117,7 @@ suite("Hungry Delete across line", () => {
 
     // public
     // static
-    // 
+    //
     // |void
     // =>
     // public
@@ -451,7 +451,7 @@ suite("Smart backspace above line", () => {
     // b<EOL>
     // |
     // c <EOL>
-    // => 
+    // =>
     // b<EOL>
     // c <EOL>
     test("Keep One Space But Empty Line", async () => {
@@ -464,26 +464,26 @@ suite("Smart backspace above line", () => {
             CoupleCharacters: ConfigurationProvider.CoupleCharacters
         });
         await ExecuteSmartBackspace("Keep One Space But Empty Line");
-        
+
         assert.equal(getText(1, 0, 1, 1), "b");
         assert.equal(getText(2, 0, 2, 2), "c ");
     });
 
     // c <EOL>
     // d<EOL>
-    // => 
+    // =>
     // c d<EOL>
     test("Keep One Space But above line has space", async () => {
         let editor = window.activeTextEditor;
 
         let selection = new Selection(new Position(4, 0), new Position(4, 0));
         editor.selection = selection;
-        myExtension.setConfig({ 
+        myExtension.setConfig({
             KeepOneSpace: true,
             CoupleCharacters: ConfigurationProvider.CoupleCharacters
         });
         await ExecuteSmartBackspace("Keep One Space But above line has space");
-        
+
         assert.equal(getText(3, 0, 3, 3), "c d");
     });
 });

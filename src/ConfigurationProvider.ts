@@ -9,7 +9,7 @@ export interface HungryDeleteConfiguration {
 }
 
 /**
- * Prvoide configuration which affects the execution behaviour of hungry delete and smart backspace, not the "when" condition 
+ * Prvoide configuration which affects the execution behaviour of hungry delete and smart backspace, not the "when" condition
  *
  * 1. Provide a TypeSafe config object
  * 2. Stub the config without actually reading the vscode workspace config (For testing purpose)
