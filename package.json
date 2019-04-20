@@ -52,7 +52,7 @@
                     "description": "Enable Smart Backsapce",
                     "default": true
                 },
-                "hungryDelete.keepOneSpace" : {
+                "hungryDelete.keepOneSpace": {
                     "type": "boolean",
                     "description": "Keep at least one space after last word of previous line with smart backspace",
                     "default": false
@@ -67,11 +67,11 @@
         "test": "node ./node_modules/vscode/bin/test"
     },
     "devDependencies": {
-        "typescript": "^2.0.3",
-        "vscode": "^1.0.0",
-        "mocha": "^2.3.3",
+        "@types/mocha": "^2.2.32",
         "@types/node": "^6.0.40",
-        "@types/mocha": "^2.2.32"
+        "mocha": "^6.1.4",
+        "typescript": "^2.0.3",
+        "vscode": "^1.1.33"
     },
     "repository": {
         "type": "git",
