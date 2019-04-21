@@ -8,9 +8,11 @@ import {
     ExtensionContext,
     Position,
     Range,
+    TextEditor,
     TextDocument,
     TextLine,
     Selection,
+    languages,
 } from 'vscode';
 
 import {
@@ -67,8 +69,8 @@ String.prototype.findLastIndex = function (predicate: (theChar: string) => Boole
 
 /**
  * Little util function to test non empty (whitespace) char using regex
- * 
- * @param theChar 
+ *
+ * @param theChar
  */
 const isNonEmptyChar = function (theChar: string): Boolean {
     return /\S/.test(theChar);
@@ -77,13 +79,13 @@ const isNonEmptyChar = function (theChar: string): Boolean {
 /**
  * Find the last non-empty character position in previous lines, used as start positon in deletion range
  * (Assume no triming space)
- * 
- * @param {TextDocument} doc
- * @param {number} cursorLineNumber
+ *
+ * @param {TextDocument} textDocument
+ * @param {number} lineNumber
  * @returns {Position} First non-empty character position in the above line
  */
-function findLastStartPosition(doc: TextDocument, cursorLineNumber: number): Position {
-    const nonEmptyLine = findLastNonEmptyLine(cursorLineNumber, doc);
+function findLastStartPosition(textDocument: TextDocument, lineNumber: number): Position {
+    const nonEmptyLine = findLastNonEmptyLine(textDocument, lineNumber);
     if (nonEmptyLine) {
         return nonEmptyLine.range.end;
     }
@@ -98,7 +100,7 @@ function findLastStartPosition(doc: TextDocument, cursorLineNumber: number): Pos
  * @param {TextDocument} textDocument
  * @returns {TextLine} The line which is not emptyOrWhiteSpace, otherwise null
  */
-function findLastNonEmptyLine(lineNumber: number, textDocument: TextDocument): TextLine {
+function findLastNonEmptyLine(textDocument: TextDocument, lineNumber: number): TextLine {
     for (let lineIdx = lineNumber - 1; lineIdx >= 0; lineIdx--) {
         let line = textDocument.lineAt(lineIdx);
         let empty = line.isEmptyOrWhitespace;
@@ -129,7 +131,7 @@ interface SmartBackspaceDeletion {
  * @param {TextDocument} textDocument - Document working on
  * @param {TextLine} textLine - TextLine of cursor selection
  * @param {Position} position - Position of active cursor selection
- * 
+ *
  * @returns {Position} first index of word or first index of continuous whitespaces or index of word Separator
  */
 function findDeleteWorldLeftStartPosition(
@@ -161,10 +163,10 @@ function findDeleteWorldLeftStartPosition(
 /**
  * Edge case: If there is Word Seperator, e.g. @ or =  - its word range is undefined
  * the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
- * 
- * @param text 
- * @param lastNonEmptyChar 
- * @param position 
+ *
+ * @param text
+ * @param lastNonEmptyChar
+ * @param position
  */
 function findSeperatorStartPosition(text: string, lastNonEmptyChar: number, position: Position) {
     let separatorChar = text.charAt(lastNonEmptyChar);
@@ -255,6 +257,7 @@ function registerHungryDelete() {
  * @returns {SmartBackspaceDeletion} SmartBackspaceDeletion, it includes the range to be detected based on the input selection, and whether to keep one space
  */
 function findSmartBackspaceRange(
+    textEditor: TextEditor,
     textDocument: TextDocument,
     selection: Selection): SmartBackspaceDeletion {
     if (!selection.isEmpty) {
@@ -275,12 +278,33 @@ function findSmartBackspaceRange(
         let aboveLine = textDocument.lineAt(lineNumber - 1);
         let aboveRange = aboveLine.range;
 
+        // Just move one online up
         if (aboveLine.isEmptyOrWhitespace) {
             return {
                 range: new Range(aboveRange.start, aboveRange.start.translate(1, 0))
             };
         }
 
+        // Consider indent rule
+        if (!textLine.isEmptyOrWhitespace && configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
+            // When getting a text editor's options, this property will always be a number (resolved).
+            // When setting a text editor's options, this property is optional and it can be a number or "auto".
+            const tabSize = textEditor.options.tabSize as number;
+            const aboveNonEmptyIdx = aboveLine.firstNonWhitespaceCharacterIndex;
+            const lineNonEmptyIdx = textLine.firstNonWhitespaceCharacterIndex;
+            const indentDifference = lineNonEmptyIdx - (aboveNonEmptyIdx + tabSize);
+
+            if (indentDifference > 0){
+                const theEnd = new Position(lineNumber, textLine.firstNonWhitespaceCharacterIndex);
+                const theStart = theEnd.translate(0, -(indentDifference));
+
+                return {
+                    range: new Range(theStart, theEnd)
+                };
+            }
+        }
+
+        // Keep One Space
         let startPosition = findLastStartPosition(textDocument, lineNumber);
         let isKeepOneSpaceInSetting = configProvider.getConfiguration().KeepOneSpace;
         let startPositionChar = textDocument.getText(new Range(startPosition.translate(0, -1), startPosition));
@@ -299,6 +323,7 @@ function findSmartBackspaceRange(
             };
         }
 
+        // Ordinary SmartBackspace
         return {
             range: new Range(startPosition, endPosition)
         };
@@ -346,7 +371,7 @@ function findInlineBackspaceRange(position: Position, textDocument: TextDocument
 export function smartBackspace(): Thenable<Boolean> {
     const editor = window.activeTextEditor;
     const document = editor.document;
-    const deletions = editor.selections.map(selection => findSmartBackspaceRange(document, selection));
+    const deletions = editor.selections.map(selection => findSmartBackspaceRange(editor, document, selection));
 
     const returned = editor.edit(editorBuilder => {
         deletions.forEach(deletion => {

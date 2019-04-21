@@ -56,6 +56,24 @@
                     "type": "boolean",
                     "description": "Keep at least one space after last word of previous line with smart backspace",
                     "default": false
+                },
+                "hungryDelete.considerIndentationRules" : {
+                    "type": "boolean",
+                    "description": "Consider indentation rule in smart backspace",
+                    "default": false
+                },
+                "hungryDelete.languageConfigurations" : {
+                    "type": "array",
+                    "description": "Provide language configuration for smart backspace",
+                    "default": [
+                        {
+                            "languageId": "html",
+                            "indentationRules": {
+                                "increaseIndentPattern": "<(?!\\?|(?:area|base|br|col|frame|hr|html|img|input|link|meta|param)\\b|[^>]*\\/>)([-_\\.A-Za-z0-9]+)(?=\\s|>)\\b[^>]*>(?!.*<\\/\\1>)|<!--(?!.*-->)|\\{[^}\"']*$",
+                                "decreaseIndentPattern": "^\\s*(<\\/(?!html)[-_\\.A-Za-z0-9]+\\b[^>]*>|-->|\\})"
+                            }
+                        }
+                    ]
                 }
             }
         }
