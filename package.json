@@ -57,20 +57,85 @@
                     "description": "Keep at least one space after last word of previous line with smart backspace",
                     "default": false
                 },
-                "hungryDelete.considerIndentationRules" : {
+                "hungryDelete.keepOneSpaceException" : {
+                    "type": "string",
+                    "description": "Keep One Space except when it encounters following characters"
+                },
+                "hungryDelete.considerIncreaseIndentPattern" : {
                     "type": "boolean",
-                    "description": "Consider indentation rule in smart backspace",
+                    "description": "Consider increaseIndentPattern in indentationRules for smart backspace",
+                    "default": false
+                },
+                "hungryDelete.followAbovelineIndent" : {
+                    "type": "boolean",
+                    "description": "Consider the indentation of above line for smart backspace if increaseIndentPattern do not match above line",
                     "default": false
                 },
                 "hungryDelete.languageConfigurations" : {
                     "type": "array",
-                    "description": "Provide language configuration for smart backspace",
+                    "description": "Provide language configuration which affects the behaviour of smart backspace",
                     "default": [
                         {
                             "languageId": "html",
                             "indentationRules": {
                                 "increaseIndentPattern": "<(?!\\?|(?:area|base|br|col|frame|hr|html|img|input|link|meta|param)\\b|[^>]*\\/>)([-_\\.A-Za-z0-9]+)(?=\\s|>)\\b[^>]*>(?!.*<\\/\\1>)|<!--(?!.*-->)|\\{[^}\"']*$",
                                 "decreaseIndentPattern": "^\\s*(<\\/(?!html)[-_\\.A-Za-z0-9]+\\b[^>]*>|-->|\\})"
+                            }
+                        },
+                        {
+                            "languageId": "go",
+                            "indentationRules": {
+                                "increaseIndentPattern": "^.*(\\bcase\\b.*:|\\bdefault\\b:|(\\b(func|if|else|switch|select|for|struct)\\b.*)?{[^}\"'`]*|\\([^)\"'`]*)$",
+                                "decreaseIndentPattern": "^\\s*(\\bcase\\b.*:|\\bdefault\\b:|}[)}]*[),]?|\\)[,]?)$"
+                            }
+                        },
+                        {
+                            "languageId": "json",
+                            "indentationRules": {
+                                "increaseIndentPattern": "^.*(\\{[^}]*|\\[[^\\]]*)$",
+                                "decreaseIndentPattern": "^\\s*[}\\]],?\\s*$"
+                            }
+                        },
+                        {
+                            "languageId": "less",
+                            "indentationRules": {
+                                "increaseIndentPattern": "(^.*\\{[^}]*$)",
+                                "decreaseIndentPattern": "^\\s*\\}"
+                            }
+                        },
+                        {
+                            "languageId": "lua",
+                            "indentationRules": {
+                                "increaseIndentPattern": "^((?!(\\-\\-)).)*((\\b(else|function|then|do|repeat)\\b((?!\\b(end|until)\\b).)*)|(\\{\\s*))$",
+                                "decreaseIndentPattern": "^\\s*((\\b(elseif|else|end|until)\\b)|(\\})|(\\)))"
+                            }
+                        },
+                        {
+                            "languageId": "php",
+                            "indentationRules": {
+                                "increaseIndentPattern": "({(?!.+}).*|\\(|\\[|((else(\\s)?)?if|else|for(each)?|while|switch).*:)\\s*(/[/*].*)?$",
+                                "decreaseIndentPattern": "^(.*\\*\\/)?\\s*((\\})|(\\)+[;,])|(\\][;,])|\\b(else:)|\\b((end(if|for(each)?|while|switch));))"
+                            }
+                        },
+                        {
+                            "languageId": "ruby",
+                            "indentationRules": {
+                                "increaseIndentPattern": "^\\s*((begin|class|(private|protected)\\s+def|def|else|elsif|ensure|for|if|module|rescue|unless|until|when|while|case)|([^#]*\\sdo\\b)|([^#]*=\\s*(case|if|unless)))\\b([^#\\{;]|(\"|'|\/).*\\4)*(#.*)?$",
+                                "decreaseIndentPattern": "^\\s*([}\\]]([,)]?\\s*(#|$)|\\.[a-zA-Z_]\\w*\\b)|(end|rescue|ensure|else|elsif|when)\\b)"
+                            }
+                        },
+                        {
+                            "languageId": "typescript",
+                            "indentationRules": {
+                                "increaseIndentPattern": "^((?!.*?\\/\\*).*\\*\\/)?\\s*[\\}\\]].*$",
+                                "decreaseIndentPattern": "^((?!\\/\\/).)*(\\{[^}\"'`]*|\\([^)\"'`]*|\\[[^\\]\"'`]*)$"
+                            }
+                        },
+                        {
+                            "languageId": "yaml",
+                            "indentationRules": {
+                                "increaseIndentPattern": "^\\s*.*(:|-) ?(&amp;\\w+)?(\\{[^}\"']*|\\([^)\"']*)?$",
+                                "decreaseIndentPattern": "^\\s+\\}$"
                             }
                         }
                     ]

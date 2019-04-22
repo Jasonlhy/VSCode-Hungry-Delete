@@ -1,4 +1,4 @@
-import { workspace, TextLine, languages } from 'vscode';
+import { workspace, TextLine, Disposable } from 'vscode';
 
 interface IndentationRules {
     increaseIndentPattern?: RegExp
@@ -16,19 +16,22 @@ interface LanguageConfiguartion {
 export interface HungryDeleteConfiguration {
     KeepOneSpace?: boolean
     CoupleCharacters: string[],
-    ConsiderIndentationRules?: boolean,
-    LanguageConfigurations?:  LanguageConfiguartion[]
+    ConsiderIncreaseIndentPattern?: boolean,
+    FollowAbovelineIndent?: boolean,
+    LanguageConfigurations?:  LanguageConfiguartion[],
+    KeepOneSpaceException?: string,
 }
 
 /**
  * Prvoide configuration which affects the execution behaviour of hungry delete and smart backspace, not the "when" condition
  *
- * 1. Provide a TypeSafe config object
+ * 1. Provide a TypeSafe config object, meanwhile caches the configuration
  * 2. Stub the config without actually reading the vscode workspace config (For testing purpose)
  *
  */
 export class ConfigurationProvider {
-    private config?: HungryDeleteConfiguration
+    private config?: HungryDeleteConfiguration;
+    private workspaceListener: Disposable;
 
     // TODO: May be a better way to handle this
     static CoupleCharacters = [
@@ -66,7 +69,7 @@ export class ConfigurationProvider {
         this.config = config;
     }
 
-    _mapIndentionRules = (json: any) : IndentationRules => {
+    private _mapIndentionRules = (json: any) : IndentationRules => {
         let increaseIndentPattern: RegExp, decreaseIndentPattern: RegExp;
 
         if (json){
@@ -87,7 +90,7 @@ export class ConfigurationProvider {
         return undefined;
     }
 
-    _mapLanguageConfig = (json: any) : LanguageConfiguartion => {
+    private _mapLanguageConfig = (json: any) : LanguageConfiguartion => {
         const languageId: string = json.languageId;
         const indentationRules: IndentationRules = this._mapIndentionRules(json.indentationRules);
 
@@ -96,33 +99,85 @@ export class ConfigurationProvider {
             indentationRules: indentationRules
         }
     }
+
+    private _getLanguageConfigurations = () : LanguageConfiguartion[]  => {
+        const jsonArray: any[] = workspace.getConfiguration().get('hungryDelete.languageConfigurations')
+        if (jsonArray){
+            return jsonArray.map(json => this._mapLanguageConfig(json));
+        }
+
+        return undefined;
+    }
+
     /**
-     * If internal configuration object exists, use it
-     * Otherwise, use workspace configuration settings
+     * Attach listener which listen the workspace configuration change
+     */
+    public listenConfigurationChange = () => {
+        this.workspaceListener = workspace.onDidChangeConfiguration((e) => {
+            if (e.affectsConfiguration("hungryDelete")){
+                this._resetConfiguration();
+                console.log("Reset hungry delete configuration");
+            }
+        });
+    }
+
+    /**
+     * Remove listener which listen the workspace configuration change in order to prevent memory leak
+     */
+    public unlistenConfigurationChange = () => {
+        if (this.workspaceListener){
+            this.workspaceListener.dispose();
+        }
+    }
+
+    /**
+     * If internal configuration object exists, use it.
+     *
+     * Otherwise, use workspace configuration settings (Lazy loading of the config)
      *
      * @memberof ConfigurationProvider
      */
     getConfiguration = () : HungryDeleteConfiguration => {
         if (this.config) {
-            return this.config
-        } else {
-            const langConfigJSONArray: any[] = workspace.getConfiguration().get('hungryDelete.languageConfigurations')
-            if (langConfigJSONArray){
-                var langConfigs: LanguageConfiguartion[] = langConfigJSONArray.map(json => this._mapLanguageConfig(json));
-            }
-
-            return {
-                KeepOneSpace: workspace.getConfiguration().get('hungryDelete.keepOneSpace'),
-                CoupleCharacters: ConfigurationProvider.CoupleCharacters,
-                ConsiderIndentationRules: workspace.getConfiguration().get('hungryDelete.considerIndentationRules'),
-                LanguageConfigurations: langConfigs
-            }
+            return this.config;
         }
+
+        const workspaceConfig = workspace.getConfiguration('hungryDelete');
+
+        this.config = {
+            KeepOneSpace: workspaceConfig.get('keepOneSpace'),
+            KeepOneSpaceException: workspaceConfig.get('keepOneSpaceException'),
+            CoupleCharacters: ConfigurationProvider.CoupleCharacters,
+            ConsiderIncreaseIndentPattern: workspaceConfig.get('considerIncreaseIndentPattern'),
+            FollowAbovelineIndent: workspaceConfig.get('followAbovelineIndent'),
+            LanguageConfigurations: this._getLanguageConfigurations(),
+        }
+
+        return this.config;
+    }
+
+    /**
+     * Clear the internal configuration cache
+     *
+     * @private
+     * @memberof ConfigurationProvider
+     */
+    private _resetConfiguration = () => {
+        this.config = null;
+    }
+
+    isKeepOnespaceException(char: string){
+        const config = this.getConfiguration();
+        if (!config.KeepOneSpaceException){
+            return false;
+        }
+
+        return config.KeepOneSpaceException.indexOf(char) >= 0;
     }
 
     increaseIndentAfterLine(textLine: TextLine, languageId: string){
         const config = this.getConfiguration();
-        if (!config.ConsiderIndentationRules){
+        if (!config.ConsiderIncreaseIndentPattern){
             return false;
         }
 

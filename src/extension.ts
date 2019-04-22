@@ -12,7 +12,6 @@ import {
     TextDocument,
     TextLine,
     Selection,
-    languages,
 } from 'vscode';
 
 import {
@@ -20,6 +19,9 @@ import {
     HungryDeleteConfiguration
 } from './ConfigurationProvider'
 
+/**
+ * Singleton config provider
+ */
 const configProvider = new ConfigurationProvider();
 
 /**
@@ -152,6 +154,8 @@ function findDeleteWorldLeftStartPosition(
 
     // Delete a space with the entire word at left
     // in consistent to the exisiting implementation of "deleteWorldLeft"
+    // The word is different in each language
+    // let wordRange = textDocument.getWordRangeAtPosition(new Position(position.line, lastNonEmptyChar), /[a-zA-Z]+/);
     let wordRange = textDocument.getWordRangeAtPosition(new Position(position.line, lastNonEmptyChar));
     if (wordRange) {
         return wordRange.start;
@@ -286,21 +290,40 @@ function findSmartBackspaceRange(
         }
 
         // Consider indent rule
-        if (!textLine.isEmptyOrWhitespace && configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
+        const config = configProvider.getConfiguration();
+        if (!textLine.isEmptyOrWhitespace){
             // When getting a text editor's options, this property will always be a number (resolved).
             // When setting a text editor's options, this property is optional and it can be a number or "auto".
             const tabSize = textEditor.options.tabSize as number;
             const aboveNonEmptyIdx = aboveLine.firstNonWhitespaceCharacterIndex;
             const lineNonEmptyIdx = textLine.firstNonWhitespaceCharacterIndex;
-            const indentDifference = lineNonEmptyIdx - (aboveNonEmptyIdx + tabSize);
 
-            if (indentDifference > 0){
-                const theEnd = new Position(lineNumber, textLine.firstNonWhitespaceCharacterIndex);
-                const theStart = theEnd.translate(0, -(indentDifference));
+            if (config.ConsiderIncreaseIndentPattern && configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
+                const expectedLineNonEmptyIdx = (aboveNonEmptyIdx + tabSize);
+                const indentDifference = lineNonEmptyIdx - expectedLineNonEmptyIdx;
 
-                return {
-                    range: new Range(theStart, theEnd)
-                };
+                if (indentDifference > 0){
+                    const theEnd = new Position(lineNumber, textLine.firstNonWhitespaceCharacterIndex);
+                    const theStart = theEnd.translate(0, -(indentDifference));
+
+                    return {
+                        range: new Range(theStart, theEnd)
+                    };
+                }
+            }
+
+            if (config.FollowAbovelineIndent && !configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
+                const expectedLineNonEmptyIdx = aboveNonEmptyIdx;
+                const indentDifference = lineNonEmptyIdx - expectedLineNonEmptyIdx;
+
+                if (indentDifference > 0){
+                    const theEnd = new Position(lineNumber, textLine.firstNonWhitespaceCharacterIndex);
+                    const theStart = theEnd.translate(0, -(indentDifference));
+
+                    return {
+                        range: new Range(theStart, theEnd)
+                    };
+                }
             }
         }
 
@@ -314,7 +337,8 @@ function findSmartBackspaceRange(
         // 2. Only add space if start positon char is not space
         let isKeepOneSpace = isKeepOneSpaceInSetting &&
             !textLine.isEmptyOrWhitespace &&
-            isNonEmptyChar(startPositionChar);
+            isNonEmptyChar(startPositionChar) &&
+            !configProvider.isKeepOnespaceException(startPositionChar);
 
         if (isKeepOneSpace) {
             return {
@@ -407,11 +431,13 @@ export function activate(context: ExtensionContext) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "hungry-delete" is now active!');
-
     context.subscriptions.push(registerHungryDelete());
     context.subscriptions.push(registerSmartBackspace());
+
+    configProvider.listenConfigurationChange();
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {
+    configProvider.unlistenConfigurationChange();
 }
