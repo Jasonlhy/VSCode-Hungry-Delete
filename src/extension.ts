@@ -254,6 +254,34 @@ function registerHungryDelete() {
 }
 
 /**
+ * Find the range you need to delete the indent,for example, <--> distince below
+ *
+ * <div>
+ *   <--><p>
+ * </div>
+ *
+ * @param {TextLine} textLine
+ * @param {number} expectedNonEmptyIdx
+ * @returns {SmartBackspaceDeletion}
+ */
+function findIndentDeletion(textLine: TextLine, expectedNonEmptyIdx: number) : SmartBackspaceDeletion {
+    const lineNonEmptyIdx = textLine.firstNonWhitespaceCharacterIndex;
+    const lineNumber = textLine.lineNumber;
+    const indentDifference = lineNonEmptyIdx - expectedNonEmptyIdx;
+
+    if (indentDifference > 0){
+        const theEnd = new Position(lineNumber, textLine.firstNonWhitespaceCharacterIndex);
+        const theStart = theEnd.translate(0, -(indentDifference));
+
+        return {
+            range: new Range(theStart, theEnd)
+        };
+    }
+
+    return null;
+}
+
+/**
  *  Find the range to be deleted for smart backspace, backtracing the start position from a cursor positoin
  *
  * @param {TextDocument} textDocument - TextDocument of Editor
@@ -282,7 +310,7 @@ function findSmartBackspaceRange(
         let aboveLine = textDocument.lineAt(lineNumber - 1);
         let aboveRange = aboveLine.range;
 
-        // Just move one online up
+        // Move one line up
         if (aboveLine.isEmptyOrWhitespace) {
             return {
                 range: new Range(aboveRange.start, aboveRange.start.translate(1, 0))
@@ -296,33 +324,20 @@ function findSmartBackspaceRange(
             // When setting a text editor's options, this property is optional and it can be a number or "auto".
             const tabSize = textEditor.options.tabSize as number;
             const aboveNonEmptyIdx = aboveLine.firstNonWhitespaceCharacterIndex;
-            const lineNonEmptyIdx = textLine.firstNonWhitespaceCharacterIndex;
 
+            // Current line one level indent that above line
             if (config.ConsiderIncreaseIndentPattern && configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
-                const expectedLineNonEmptyIdx = (aboveNonEmptyIdx + tabSize);
-                const indentDifference = lineNonEmptyIdx - expectedLineNonEmptyIdx;
-
-                if (indentDifference > 0){
-                    const theEnd = new Position(lineNumber, textLine.firstNonWhitespaceCharacterIndex);
-                    const theStart = theEnd.translate(0, -(indentDifference));
-
-                    return {
-                        range: new Range(theStart, theEnd)
-                    };
+                const indentDeletion = findIndentDeletion(textLine, (aboveNonEmptyIdx + tabSize))
+                if (indentDeletion){
+                    return indentDeletion;
                 }
             }
 
+            // Current line follow indent of above line if above line don't know increase pattern
             if (config.FollowAbovelineIndent && !configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
-                const expectedLineNonEmptyIdx = aboveNonEmptyIdx;
-                const indentDifference = lineNonEmptyIdx - expectedLineNonEmptyIdx;
-
-                if (indentDifference > 0){
-                    const theEnd = new Position(lineNumber, textLine.firstNonWhitespaceCharacterIndex);
-                    const theStart = theEnd.translate(0, -(indentDifference));
-
-                    return {
-                        range: new Range(theStart, theEnd)
-                    };
+                const indentDeletion = findIndentDeletion(textLine, aboveNonEmptyIdx)
+                if (indentDeletion){
+                    return indentDeletion;
                 }
             }
         }
