@@ -49,7 +49,7 @@ Press `backspace` once
 
 ![After Smart Backspace](images/after_smartbackspace.gif)
 
-Smartbackspace also support **multiple cursor**
+Smart Bakcspace also support **multiple cursor** :
 
 ![Smart Backspace Multiple Cursor](images/smartbackspace_multicursor.gif)
 
@@ -65,7 +65,15 @@ Set to `true` to keep at least one space after the last word of the previous lin
 }
 ```
 
-#### Consider Increase Pattern
+When you see some characters, don't use keep one space
+
+```json
+{
+    "hungryDelete.keepOneSpaceException": ">;"
+}
+```
+
+#### Consider Increase Indent Pattern
 
 Set to `true` to consider increase pattern. By default, this is `false`.
 
@@ -132,7 +140,7 @@ To disable smart backspace, just set `hungryDelete.enableSmartBackspace` to be f
 
 ### Language Configuration
 
-In order to power [consider-increase-pattern](#consider-increase-pattern), it needs language configuration.
+In order to power [consider-increase-pattern](#consider-increase-indent-pattern), it needs language configuration.
 However, VSCode doesn't provide API to retrieve the language configuration, therefore I copied the following configuration from vscode source code, and embedded it in the extension. If you need to support another language, you need to adjust the following setting.
 
 ```json
