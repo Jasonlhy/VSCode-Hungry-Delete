@@ -9,8 +9,8 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import { Range, window, Position, Selection } from 'vscode';
-import * as myExtension from '../src/extension';
-import { ConfigurationProvider } from '../src/ConfigurationProvider'
+import * as myExtension from '../../src/extension';
+import { ConfigurationProvider } from '../../src/ConfigurationProvider'
 
 // This whole testing script is integration testing
 // 1. It fires up the vscode and the extension
