@@ -22,6 +22,7 @@ export function run(): Promise<void> {
 
 			try {
 				// Run the mocha test
+				// mocha.grep("Keep One Space")
 				mocha.run(failures => {
 					if (failures > 0) {
 						e(new Error(`${failures} tests failed.`));

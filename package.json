@@ -49,7 +49,7 @@
             "properties": {
                 "hungryDelete.enableSmartBackspace": {
                     "type": "boolean",
-                    "description": "Enable Smart Backsapce",
+                    "description": "Enable Smart Backspace",
                     "default": true
                 },
                 "hungryDelete.keepOneSpace": {
@@ -66,14 +66,14 @@
                     "description": "Consider increaseIndentPattern in indentationRules for smart backspace",
                     "default": false
                 },
-                "hungryDelete.followAbovelineIndent" : {
+                "hungryDelete.followAboveLineIndent" : {
                     "type": "boolean",
                     "description": "Consider the indentation of above line for smart backspace if increaseIndentPattern do not match above line",
                     "default": false
                 },
                 "hungryDelete.languageConfigurations" : {
                     "type": "array",
-                    "description": "Provide language configuration which affects the behaviour of smart backspace",
+                    "description": "Provide language configuration which affects the behavior of smart backspace",
                     "default": [
                         {
                             "languageId": "html",

@@ -17,7 +17,7 @@ import {
 import {
     ConfigurationProvider,
     HungryDeleteConfiguration
-} from './ConfigurationProvider'
+} from './ConfigurationProvider';
 
 /**
  * Singleton config provider
@@ -25,14 +25,14 @@ import {
 const configProvider = new ConfigurationProvider();
 
 /**
- * Override all the confiugrations of the config provider. Use it after the extension is actived
+ * Override all the configurations of the config provider. Use it after the extension is activated
  *
  * This function is designed for testing purpose for I can "inject the dependency" of the config in testing scripts
  *
  * @param newConfig Read every key into internal config
  */
 export function setConfig(newConfig: HungryDeleteConfiguration) {
-    configProvider.setConfiguration(newConfig)
+    configProvider.setConfiguration(newConfig);
 }
 
 /**
@@ -67,7 +67,7 @@ String.prototype.findLastIndex = function (predicate: (theChar: string) => Boole
     }
 
     return -1;
-}
+};
 
 /**
  * Little util function to test non empty (whitespace) char using regex
@@ -76,11 +76,11 @@ String.prototype.findLastIndex = function (predicate: (theChar: string) => Boole
  */
 const isNonEmptyChar = function (theChar: string): Boolean {
     return /\S/.test(theChar);
-}
+};
 
 /**
- * Find the last non-empty character position in previous lines, used as start positon in deletion range
- * (Assume no triming space)
+ * Find the last non-empty character position in previous lines, used as start position in deletion range
+ * (Assume no trimming space)
  *
  * @param {TextDocument} textDocument
  * @param {number} lineNumber
@@ -126,7 +126,7 @@ interface SmartBackspaceDeletion {
 
 /**
  * Find the start position of the deletion range.
- * It could be first index of word, first index of continuous whitespaces, or index of word Separator
+ * It could be first index of word, first index of continuous whitespace, or index of word Separator
  *
  * This is used to perform a mock version of "deleteWorldLeft"
  *
@@ -134,7 +134,7 @@ interface SmartBackspaceDeletion {
  * @param {TextLine} textLine - TextLine of cursor selection
  * @param {Position} position - Position of active cursor selection
  *
- * @returns {Position} first index of word or first index of continuous whitespaces or index of word Separator
+ * @returns {Position} first index of word or first index of continuous whitespace or index of word Separator
  */
 function findDeleteWorldLeftStartPosition(
     textDocument: TextDocument,
@@ -153,7 +153,7 @@ function findDeleteWorldLeftStartPosition(
     }
 
     // Delete a space with the entire word at left
-    // in consistent to the exisiting implementation of "deleteWorldLeft"
+    // in consistent to the existing implementation of "deleteWorldLeft"
     // The word is different in each language
     // let wordRange = textDocument.getWordRangeAtPosition(new Position(position.line, lastNonEmptyChar), /[a-zA-Z]+/);
     let wordRange = textDocument.getWordRangeAtPosition(new Position(position.line, lastNonEmptyChar));
@@ -161,18 +161,18 @@ function findDeleteWorldLeftStartPosition(
         return wordRange.start;
     }
 
-    return findSeperatorStartPosition(text, lastNonEmptyChar, position);
+    return findSeparatorStartPosition(text, lastNonEmptyChar, position);
 }
 
 /**
- * Edge case: If there is Word Seperator, e.g. @ or =  - its word range is undefined
- * the exisiting implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
+ * Edge case: If there is Word Separator, e.g. @ or =  - its word range is undefined
+ * the existing implementation of "deleteWorldLeft" is to delete all of them "@@@@@|3333 444" => "333 4444"
  *
  * @param text
  * @param lastNonEmptyChar
  * @param position
  */
-function findSeperatorStartPosition(text: string, lastNonEmptyChar: number, position: Position) {
+function findSeparatorStartPosition(text: string, lastNonEmptyChar: number, position: Position) {
     let separatorChar = text.charAt(lastNonEmptyChar);
     const nonSeparatorIndex = text.findLastIndex(theChar => theChar !== separatorChar, lastNonEmptyChar - 1);
     const endIdx = (nonSeparatorIndex < 0) ? 0 : (nonSeparatorIndex + 1);
@@ -180,7 +180,7 @@ function findSeperatorStartPosition(text: string, lastNonEmptyChar: number, posi
 }
 
 /**
- * Search the range to be deleted for hungry delete, search the start position from a cursor positoin
+ * Search the range to be deleted for hungry delete, search the start position from a cursor position
  *
  * @param {TextDocument} textDocument - TextDocument working on
  * @param {Selection} selection - A cursor selection of document
@@ -221,10 +221,10 @@ export function hungryDelete(): Thenable<Boolean> {
     const document = editor.document;
     const deleteRanges = editor.selections.map(selection => findHungryDeleteRange(document, selection));
 
-    // It includs the startPosition but exclude the endPositon
+    // It include the startPosition but exclude the endPosition
     // This is an async operation and is in one transaction
     const returned = editor.edit(editorBuilder => {
-        deleteRanges.forEach(range => editorBuilder.delete(range))
+        deleteRanges.forEach(range => editorBuilder.delete(range));
     });
 
     // Adjust the viewport
@@ -236,11 +236,11 @@ export function hungryDelete(): Thenable<Boolean> {
 }
 
 /**
- * Register the hundry delete commmand
+ * Register the hungry delete command
  *
- * This extension simpliy override the keybinding ctrl+backspace to extends its hungry delete function to above lines
+ * This extension simplify override the keybinding ctrl+backspace to extends its hungry delete function to above lines
  * Currently ctrl+backspace will hungry delete the entire whitespace on the same line before the cursor
- * Therefore, to implement "backtraceInLine" is not neccessary
+ * Therefore, to implement "backtraceInLine" is not necessary
  *
  * @returns disposable to be registered in the context
  */
@@ -254,7 +254,7 @@ function registerHungryDelete() {
 }
 
 /**
- * Find the range you need to delete the indent,for example, <--> distince below
+ * Find the range you need to delete the indent,for example, <--> distance below
  *
  * <div>
  *   <--><p>
@@ -282,7 +282,7 @@ function findIndentDeletion(textLine: TextLine, expectedNonEmptyIdx: number) : S
 }
 
 /**
- *  Find the range to be deleted for smart backspace, backtracing the start position from a cursor positoin
+ *  Find the range to be deleted for smart backspace, back tracing the start position from a cursor position
  *
  * @param {TextDocument} textDocument - TextDocument of Editor
  * @param {Selection} selection - A cursor selection of document
@@ -326,16 +326,16 @@ function findSmartBackspaceRange(
             const aboveNonEmptyIdx = aboveLine.firstNonWhitespaceCharacterIndex;
 
             // Current line one level indent that above line
-            if (config.ConsiderIncreaseIndentPattern && configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
-                const indentDeletion = findIndentDeletion(textLine, (aboveNonEmptyIdx + tabSize))
+            if (config.considerIncreaseIndentPattern && configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
+                const indentDeletion = findIndentDeletion(textLine, (aboveNonEmptyIdx + tabSize));
                 if (indentDeletion){
                     return indentDeletion;
                 }
             }
 
             // Current line follow indent of above line if above line don't know increase pattern
-            if (config.FollowAbovelineIndent && !configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
-                const indentDeletion = findIndentDeletion(textLine, aboveNonEmptyIdx)
+            if (config.followAboveLineIndent && !configProvider.increaseIndentAfterLine(aboveLine, textDocument.languageId)){
+                const indentDeletion = findIndentDeletion(textLine, aboveNonEmptyIdx);
                 if (indentDeletion){
                     return indentDeletion;
                 }
@@ -344,16 +344,16 @@ function findSmartBackspaceRange(
 
         // Keep One Space
         let startPosition = findLastStartPosition(textDocument, lineNumber);
-        let isKeepOneSpaceInSetting = configProvider.getConfiguration().KeepOneSpace;
+        let isKeepOneSpaceInSetting = configProvider.getConfiguration().keepOneSpace;
         let startPositionChar = textDocument.getText(new Range(startPosition.translate(0, -1), startPosition));
 
         // For better UX ?
         // 1. Don't add space if current line is empty
-        // 2. Only add space if start positon char is not space
+        // 2. Only add space if start position char is not space
         let isKeepOneSpace = isKeepOneSpaceInSetting &&
             !textLine.isEmptyOrWhitespace &&
             isNonEmptyChar(startPositionChar) &&
-            !configProvider.isKeepOnespaceException(startPositionChar);
+            !configProvider.isKeepOneSpaceException(startPositionChar);
 
         if (isKeepOneSpace) {
             return {
@@ -382,20 +382,20 @@ function findSmartBackspaceRange(
  */
 function findInlineBackspaceRange(position: Position, textDocument: TextDocument): Range {
     // Edge case, otherwise it will failed
-    const isHeadOfDocument = position.line == 0 && position.character == 0;
+    const isHeadOfDocument = position.line === 0 && position.character === 0;
     if (isHeadOfDocument) {
-        return new Range(position, position)
+        return new Range(position, position);
     }
 
     let positionBefore = position.translate(0, -1);
     let positionAfter = position.translate(0, 1);
     let peekBackward = textDocument.getText(new Range(positionBefore, position));
     let peekForward = textDocument.getText(new Range(position, positionAfter));
-    let isAutoClosePair = ~configProvider.getConfiguration().CoupleCharacters.indexOf(peekBackward + peekForward);
+    let isAutoClosePair = ~configProvider.getConfiguration().coupleCharacters.indexOf(peekBackward + peekForward);
 
     return (isAutoClosePair) ?
         new Range(positionBefore, positionAfter) :
-        new Range(positionBefore, position);  // original backsapce
+        new Range(positionBefore, position);  // original backspace
 }
 
 /**
@@ -419,9 +419,9 @@ export function smartBackspace(): Thenable<Boolean> {
                 editorBuilder.insert(range.start, " ");
                 editorBuilder.delete(range);
             } else {
-                editorBuilder.delete(deletion.range)
+                editorBuilder.delete(deletion.range);
             }
-        })
+        });
     });
 
     if (deletions.length <= 1) {
@@ -454,5 +454,5 @@ export function activate(context: ExtensionContext) {
 
 // this method is called when your extension is deactivated
 export function deactivate() {
-    configProvider.unlistenConfigurationChange();
+    configProvider.unListenConfigurationChange();
 }

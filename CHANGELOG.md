@@ -2,6 +2,14 @@
 
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
+
+##
+Breaking change:
+
+followAboveLineIndent is renamed
+
+Migrate vscode version to 1.69
+
 ## [1.6.0] - 2019-04-23
 
 ### Added
@@ -9,6 +17,7 @@ All notable changes to the "Hungry Delete" extension will be documented in this 
 - Consider increase indent pattern
 - Follow Above Line Indent
 - Keep One Space Exception
+
 
 ### Changed
 
@@ -77,4 +86,4 @@ All notable changes to the "Hungry Delete" extension will be documented in this 
 ## [1.0.0] - 2017-01-10
 
 - Initial release
-- Able to override `ctrl+backspace` in key binding to run the hundry delete command, the cursor located at the empty line will move up to find the last non-empty character.
+- Able to override `ctrl+backspace` in key binding to run the hungry delete command, the cursor located at the empty line will move up to find the last non-empty character.

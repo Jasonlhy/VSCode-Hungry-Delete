@@ -1,6 +1,6 @@
 # Hungry Delete Extension for Visual Studio Code
 
-I find it very annoying to press backspace multiple times to remove the leading tabs or whitespaces in order to return to the previous end of the line.
+I find it very annoying to press backspace multiple times to remove the leading tabs or white spaces in order to return to the previous end of the line.
 
 Therefore, I created this extension, it overrides `ctrl+backspace` key binding, once `ctrl+backspace` is pressed, a command is executed.
 
@@ -10,7 +10,7 @@ Later I found that sometimes I just want to delete the upper line and keep the i
 
 ### Hungry Delete
 
-To delete **ALL** tab or whitespaces before the cursor, until it reaches a non-empty character.
+To delete **ALL** tab or white spaces before the cursor, until it reaches a non-empty character.
 
 - Windows and Linux : Press `ctrl+backspace`
 - Mac : Press `alt+backspace`
@@ -33,7 +33,7 @@ Press `ctrl+backspace` **ONCE** to delete the leading spaces and tabs until you 
 
 ### Smart Backspace
 
-To delete the upper empty line or delete all tabs or whitespaces until the end of the previous line.
+To delete the upper empty line or delete all tabs or white spaces until the end of the previous line.
 
 - Windows and Linux and Mac: Press `backspace`
 
@@ -49,7 +49,7 @@ Press `backspace` once
 
 ![After Smart Backspace](images/after_smartbackspace.gif)
 
-Smart Bakcspace also support **multiple cursor** :
+Smart Backspace also support **multiple cursor** :
 
 ![Smart Backspace Multiple Cursor](images/smartbackspace_multicursor.gif)
 
@@ -108,7 +108,7 @@ Set to `true` to follow above line indent. By default, this is `false`.
 
 ```json
 {
-    "hungryDelete.followAbovelineIndent": true
+    "hungryDelete.followAboveLineIndent": true
 }
 ```
 
@@ -253,6 +253,10 @@ Because [Vim extension](https://marketplace.visualstudio.com/items?itemName=jaso
 1. `git clone https://github.com/Jasonlhy/VSCode-Hungry-Delete.git`
 2. `npm install`
 3. Edit `src/extension.ts`
+
+Testing:
+Run Extension Test on vscode, make such all test cases are passed 
+Note: CLI test is not support at this moment ... (no idea why)
 
 ## Implementation
 

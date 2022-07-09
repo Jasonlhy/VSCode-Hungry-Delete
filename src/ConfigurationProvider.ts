@@ -5,7 +5,7 @@ interface IndentationRules {
     decreaseIndentPattern?: RegExp
 }
 
-interface LanguageConfiguartion {
+interface LanguageConfiguration {
     languageId: string,
     indentationRules?:  IndentationRules
 }
@@ -14,16 +14,16 @@ interface LanguageConfiguartion {
  * Configuration JS Object
  */
 export interface HungryDeleteConfiguration {
-    KeepOneSpace?: boolean
-    CoupleCharacters: string[],
-    ConsiderIncreaseIndentPattern?: boolean,
-    FollowAbovelineIndent?: boolean,
-    LanguageConfigurations?:  LanguageConfiguartion[],
-    KeepOneSpaceException?: string,
+    keepOneSpace?: boolean
+    coupleCharacters: string[],
+    considerIncreaseIndentPattern?: boolean,
+    followAboveLineIndent?: boolean,
+    languageConfigurations?:  LanguageConfiguration[],
+    keepOneSpaceException?: string,
 }
 
 /**
- * Prvoide configuration which affects the execution behaviour of hungry delete and smart backspace, not the "when" condition
+ * Provide configuration which affects the execution behavior of hungry delete and smart backspace, not the "when" condition
  *
  * 1. Provide a TypeSafe config object, meanwhile caches the configuration
  * 2. Stub the config without actually reading the vscode workspace config (For testing purpose)
@@ -34,7 +34,7 @@ export class ConfigurationProvider {
     private workspaceListener: Disposable;
 
     // TODO: May be a better way to handle this
-    static CoupleCharacters = [
+    static coupleCharacters = [
         "()",
         "[]",
         "<>",
@@ -49,16 +49,16 @@ export class ConfigurationProvider {
     }
 
     /**
-      *Get the default configuration, must be alligned with the value in settins.json
+      *Get the default configuration, must be aligned with the value in settings.json
      *
      * @memberof ConfigurationProvider
      */
     static getDefaultConfiguration = () : HungryDeleteConfiguration => {
         return {
-            KeepOneSpace: false,
-            CoupleCharacters : ConfigurationProvider.CoupleCharacters
-        }
-    }
+            keepOneSpace: false,
+            coupleCharacters : ConfigurationProvider.coupleCharacters
+        };
+    };
 
     /**
      * Set the configuration of internal config object
@@ -67,7 +67,7 @@ export class ConfigurationProvider {
      */
     setConfiguration = (config: HungryDeleteConfiguration) => {
         this.config = config;
-    }
+    };
 
     private _mapIndentionRules = (json: any) : IndentationRules => {
         let increaseIndentPattern: RegExp, decreaseIndentPattern: RegExp;
@@ -84,30 +84,30 @@ export class ConfigurationProvider {
             return {
                 increaseIndentPattern: increaseIndentPattern,
                 decreaseIndentPattern: decreaseIndentPattern
-            }
+            };
         }
 
         return undefined;
-    }
+    };
 
-    private _mapLanguageConfig = (json: any) : LanguageConfiguartion => {
+    private _mapLanguageConfig = (json: any) : LanguageConfiguration => {
         const languageId: string = json.languageId;
         const indentationRules: IndentationRules = this._mapIndentionRules(json.indentationRules);
 
         return {
             languageId: languageId,
             indentationRules: indentationRules
-        }
-    }
+        };
+    };
 
-    private _getLanguageConfigurations = () : LanguageConfiguartion[]  => {
-        const jsonArray: any[] = workspace.getConfiguration().get('hungryDelete.languageConfigurations')
+    private _getLanguageConfigurations = () : LanguageConfiguration[]  => {
+        const jsonArray: any[] = workspace.getConfiguration().get('hungryDelete.languageConfigurations');
         if (jsonArray){
             return jsonArray.map(json => this._mapLanguageConfig(json));
         }
 
         return undefined;
-    }
+    };
 
     /**
      * Attach listener which listen the workspace configuration change
@@ -119,16 +119,16 @@ export class ConfigurationProvider {
                 console.log("Reset hungry delete configuration");
             }
         });
-    }
+    };
 
     /**
      * Remove listener which listen the workspace configuration change in order to prevent memory leak
      */
-    public unlistenConfigurationChange = () => {
+    public unListenConfigurationChange = () => {
         if (this.workspaceListener){
             this.workspaceListener.dispose();
         }
-    }
+    };
 
     /**
      * If internal configuration object exists, use it.
@@ -145,16 +145,16 @@ export class ConfigurationProvider {
         const workspaceConfig = workspace.getConfiguration('hungryDelete');
 
         this.config = {
-            KeepOneSpace: workspaceConfig.get('keepOneSpace'),
-            KeepOneSpaceException: workspaceConfig.get('keepOneSpaceException'),
-            CoupleCharacters: ConfigurationProvider.CoupleCharacters,
-            ConsiderIncreaseIndentPattern: workspaceConfig.get('considerIncreaseIndentPattern'),
-            FollowAbovelineIndent: workspaceConfig.get('followAbovelineIndent'),
-            LanguageConfigurations: this._getLanguageConfigurations(),
-        }
+            keepOneSpace: workspaceConfig.get('keepOneSpace'),
+            keepOneSpaceException: workspaceConfig.get('keepOneSpaceException'),
+            coupleCharacters: ConfigurationProvider.coupleCharacters,
+            considerIncreaseIndentPattern: workspaceConfig.get('considerIncreaseIndentPattern'),
+            followAboveLineIndent: workspaceConfig.get('followAboveLineIndent'),
+            languageConfigurations: this._getLanguageConfigurations(),
+        };
 
         return this.config;
-    }
+    };
 
     /**
      * Clear the internal configuration cache
@@ -164,28 +164,28 @@ export class ConfigurationProvider {
      */
     private _resetConfiguration = () => {
         this.config = null;
-    }
+    };
 
-    isKeepOnespaceException(char: string){
+    isKeepOneSpaceException(char: string){
         const config = this.getConfiguration();
-        if (!config.KeepOneSpaceException){
+        if (!config.keepOneSpaceException){
             return false;
         }
 
-        return config.KeepOneSpaceException.indexOf(char) >= 0;
+        return config.keepOneSpaceException.indexOf(char) >= 0;
     }
 
     increaseIndentAfterLine(textLine: TextLine, languageId: string){
         const config = this.getConfiguration();
-        if (!config.ConsiderIncreaseIndentPattern){
+        if (!config.considerIncreaseIndentPattern){
             return false;
         }
 
-        const languageConfigs = config.LanguageConfigurations.filter(langConfig => langConfig.languageId === languageId);
+        const languageConfigs = config.languageConfigurations.filter(langConfig => langConfig.languageId === languageId);
         if (languageConfigs.length > 0){
             const langConfig = languageConfigs[0];
             if (langConfig.indentationRules){
-                return langConfig.indentationRules.increaseIndentPattern.test(textLine.text)
+                return langConfig.indentationRules.increaseIndentPattern.test(textLine.text);
             }
         }
 
