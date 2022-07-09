@@ -45,6 +45,38 @@ export class ConfigurationProvider {
         '""',
     ];
 
+    isStartCoupleCharacters(charB: string) {
+        if (charB === "(") {
+            return true;
+        }
+
+        if (charB === "["){
+            return true;
+        }
+
+        if (charB === "<"){
+            return true;
+        }
+
+        if (charB === "{"){
+            return true;
+        }
+
+        if (charB === "'"){
+            return true;
+        }
+
+        if (charB === "`"){
+            return true;
+        }
+
+        if (charB === '"'){
+            return true;
+        }
+
+        return false;
+    }
+
     isEndCoupleCharacters(charB: string) {
         if (charB === ")") {
             return true;

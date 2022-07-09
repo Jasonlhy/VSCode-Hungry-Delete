@@ -16,7 +16,8 @@ suite("Hungry Delete on line", () => {
             + "\"abc\"\n"
             + "<abc>\n"
             + "'abc'''''\n"
-            + "'abc''''\n";
+            + "'abc''''\n"
+            + "a\"\"b\n";
         return insertSampleText(sampleText);
     });
 
@@ -192,5 +193,20 @@ suite("Hungry Delete on line", () => {
 
         let text = getText(lineIdx, 0, lineIdx, 6);
         assert.equal(text, "'abc''");
+    });
+
+    // a"|"b
+    // =>
+    // ab
+    test("Delete Couple Character fallback Smart Backspace", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 10;
+        let selection = new Selection(new Position(lineIdx, 2), new Position(lineIdx, 2));
+        editor.selection = selection;
+        await executeHungryDelete("Delete Couple Character fallback Smart Backspace");
+
+        let text = getText(lineIdx, 0, lineIdx, 2);
+        assert.equal(text, "ab");
     });
 });

@@ -84,15 +84,15 @@ const isNonEmptyChar = function (theChar: string): Boolean {
  *
  * @param {TextDocument} textDocument
  * @param {number} lineNumber
- * @returns {Position} First non-empty character position in the above line
+ * @returns {Range} Range to be hungry delete
  */
-function findLastStartPosition(textDocument: TextDocument, lineNumber: number): Position {
+function findLastLineRange(textDocument: TextDocument, lineNumber: number, endPosition: Position): Range {
     const nonEmptyLine = findLastNonEmptyLine(textDocument, lineNumber);
     if (nonEmptyLine) {
-        return nonEmptyLine.range.end;
+        return new Range(nonEmptyLine.range.end, endPosition);
     }
 
-    return new Position(0, 0);
+    return new Range(new Position(0, 0), endPosition);
 }
 
 /**
@@ -132,16 +132,18 @@ interface SmartBackspaceDeletion {
  *
  * @param {TextDocument} textDocument - Document working on
  * @param {TextLine} textLine - TextLine of cursor selection
- * @param {Position} position - Position of active cursor selection
+ * @param {Position} endPosition - Position of active cursor selection
  *
  * @returns {Position} first index of word or first index of continuous whitespace or index of word Separator
  */
-function findDeleteWorldLeftStartPosition(
+function findDeleteWorldLeftRange(
+    textEditor: TextEditor,
     textDocument: TextDocument,
     textLine: TextLine,
-    position: Position): Position {
+    endPosition: Position,
+    selection: Selection): Range {
     const text = textLine.text;
-    const charIndexBefore = position.character - 1;
+    const charIndexBefore = endPosition.character - 1;
 
     // The cursor is at a whitespace (both side are white space)
     let lastNonEmptyChar = text.findLastIndex(isNonEmptyChar, charIndexBefore);
@@ -149,16 +151,26 @@ function findDeleteWorldLeftStartPosition(
     let deleteWhiteSpaceOnly = (offset > 1);
 
     if (deleteWhiteSpaceOnly) {
-        return new Position(position.line, lastNonEmptyChar + 1);
+        return new Range(new Position(endPosition.line, lastNonEmptyChar + 1), endPosition);
     }
 
+    // Pretty edge case ....
     // Special handling of Couple Characters
+    const currentChar = text.charAt(lastNonEmptyChar); // the one before the cursor
+    if (configProvider.isStartCoupleCharacters(currentChar)) {
+        // TODO: fallback to smart backspace, sort of hack ...
+        return findSmartBackspaceRange(
+                textEditor,
+                textDocument,
+                selection
+            ).range;
+    }
+
     if ((lastNonEmptyChar - 1) >= 0){
         const beforeChar = text.charAt(lastNonEmptyChar - 1);
-        const currentChar = text.charAt(lastNonEmptyChar);
         if (configProvider.isEndCoupleCharacters(currentChar)) {
             if (configProvider.isMatchOpenCoupleCharacters(beforeChar, currentChar) === false) {
-                return findSeparatorStartPosition(text, lastNonEmptyChar, position);
+                return new Range(findSeparatorStartPosition(text, lastNonEmptyChar, endPosition), endPosition);
             }
         }
     }
@@ -167,12 +179,12 @@ function findDeleteWorldLeftStartPosition(
     // in consistent to the existing implementation of "deleteWorldLeft"
     // The word is different in each language
     // let wordRange = textDocument.getWordRangeAtPosition(new Position(position.line, lastNonEmptyChar), /[a-zA-Z]+/);
-    let wordRange = textDocument.getWordRangeAtPosition(new Position(position.line, lastNonEmptyChar));
+    let wordRange = textDocument.getWordRangeAtPosition(new Position(endPosition.line, lastNonEmptyChar));
     if (wordRange) {
-        return wordRange.start;
+        return new Range(wordRange.start, endPosition);
     }
 
-    return findSeparatorStartPosition(text, lastNonEmptyChar, position);
+    return new Range(findSeparatorStartPosition(text, lastNonEmptyChar, endPosition), endPosition);
 }
 
 /**
@@ -197,7 +209,7 @@ function findSeparatorStartPosition(text: string, lastNonEmptyChar: number, posi
  * @param {Selection} selection - A cursor selection of document
  * @returns {Range} Range to be detected based on the input selection
  */
-function findHungryDeleteRange(textDocument: TextDocument, selection: Selection): Range {
+function findHungryDeleteRange(textEditor: TextEditor, textDocument: TextDocument, selection: Selection): Range {
     if (!selection.isEmpty) {
         return new Range(selection.start, selection.end);
     }
@@ -210,12 +222,11 @@ function findHungryDeleteRange(textDocument: TextDocument, selection: Selection)
         || (activePosition.character <= textLine.firstNonWhitespaceCharacterIndex);
 
     /* Determine the delete range */
-    const startPosition = (hungryDeleteAcrossLine)
-        ? findLastStartPosition(textDocument, lineNumber)
-        : findDeleteWorldLeftStartPosition(textDocument, textLine, activePosition);
-    const endPosition = activePosition;
+    const deleteRange = (hungryDeleteAcrossLine)
+        ? findLastLineRange(textDocument, lineNumber, activePosition)
+        : findDeleteWorldLeftRange(textEditor, textDocument, textLine, activePosition, selection);
 
-    return new Range(startPosition, endPosition);
+    return deleteRange;
 }
 
 /**
@@ -230,7 +241,7 @@ function findHungryDeleteRange(textDocument: TextDocument, selection: Selection)
 export function hungryDelete(): Thenable<Boolean> {
     const editor = window.activeTextEditor;
     const document = editor.document;
-    const deleteRanges = editor.selections.map(selection => findHungryDeleteRange(document, selection));
+    const deleteRanges = editor.selections.map(selection => findHungryDeleteRange(editor, document, selection));
 
     // It include the startPosition but exclude the endPosition
     // This is an async operation and is in one transaction
@@ -354,7 +365,8 @@ function findSmartBackspaceRange(
         }
 
         // Keep One Space
-        let startPosition = findLastStartPosition(textDocument, lineNumber);
+        // TODO: Revisit this
+        let startPosition = findLastLineRange(textDocument, lineNumber, selection.end).start;
         let isKeepOneSpaceInSetting = configProvider.getConfiguration().keepOneSpace;
         let startPositionChar = textDocument.getText(new Range(startPosition.translate(0, -1), startPosition));
 
