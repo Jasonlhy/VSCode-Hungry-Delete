@@ -14,7 +14,7 @@ suite("Smart backspace above line", () => {
             + "b\n"
             + "     \n"
             + "c \n"
-            + "d"
+            + "d";
         return insertSampleText(sampleText);
     });
 

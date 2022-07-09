@@ -12,7 +12,11 @@ suite("Hungry Delete on line", () => {
             + "public static void  main  \n"
             + "let a = b;\n"
             + "let a == b;\n"
-            + "!!??abc\n";
+            + "!!??abc\n"
+            + "\"abc\"\n"
+            + "<abc>\n"
+            + "'abc'''''\n"
+            + "'abc''''\n";
         return insertSampleText(sampleText);
     });
 
@@ -116,6 +120,7 @@ suite("Hungry Delete on line", () => {
     });
 
     // !!??|abc
+    // =>
     // !!|abc
     test("Delete Different Operator", async () => {
         let editor = window.activeTextEditor;
@@ -127,5 +132,65 @@ suite("Hungry Delete on line", () => {
 
         let text = getText(lineIdx, 0, lineIdx, 5);
         assert.equal(text, "!!abc");
+    });
+
+    // "abc"|
+    // =>
+    // "abc
+    test("Delete Couple Character 1", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 6;
+        let selection = new Selection(new Position(lineIdx, 5), new Position(lineIdx, 5));
+        editor.selection = selection;
+        await executeHungryDelete("Delete Couple Character 1");
+
+        let text = getText(lineIdx, 0, lineIdx, 4);
+        assert.equal(text, "\"abc");
+    });
+
+    // <abc>|
+    // =>
+    // <abc
+    test("Delete Couple Character 2", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 7;
+        let selection = new Selection(new Position(lineIdx, 5), new Position(lineIdx, 5));
+        editor.selection = selection;
+        await executeHungryDelete("Delete Couple Character 2");
+
+        let text = getText(lineIdx, 0, lineIdx, 5);
+        assert.equal(text, "<abc");
+    });
+
+    // 'abc'''''|
+    // =>
+    // 'abc
+    test("Delete Couple Character 3", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 8;
+        let selection = new Selection(new Position(lineIdx, 9), new Position(lineIdx, 9));
+        editor.selection = selection;
+        await executeHungryDelete("Delete Couple Character 3");
+
+        let text = getText(lineIdx, 0, lineIdx, 4);
+        assert.equal(text, "'abc");
+    });
+
+    // 'abc''|''
+    // =>
+    // 'abc''
+    test("Delete Couple Character 4", async () => {
+        let editor = window.activeTextEditor;
+
+        const lineIdx = 9;
+        let selection = new Selection(new Position(lineIdx, 6), new Position(lineIdx, 6));
+        editor.selection = selection;
+        await executeHungryDelete("Delete Couple Character 4");
+
+        let text = getText(lineIdx, 0, lineIdx, 6);
+        assert.equal(text, "'abc''");
     });
 });

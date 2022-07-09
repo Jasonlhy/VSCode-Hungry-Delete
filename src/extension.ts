@@ -152,6 +152,17 @@ function findDeleteWorldLeftStartPosition(
         return new Position(position.line, lastNonEmptyChar + 1);
     }
 
+    // Special handling of Couple Characters
+    if ((lastNonEmptyChar - 1) >= 0){
+        const beforeChar = text.charAt(lastNonEmptyChar - 1);
+        const currentChar = text.charAt(lastNonEmptyChar);
+        if (configProvider.isEndCoupleCharacters(currentChar)) {
+            if (configProvider.isMatchOpenCoupleCharacters(beforeChar, currentChar) === false) {
+                return findSeparatorStartPosition(text, lastNonEmptyChar, position);
+            }
+        }
+    }
+
     // Delete a space with the entire word at left
     // in consistent to the existing implementation of "deleteWorldLeft"
     // The word is different in each language

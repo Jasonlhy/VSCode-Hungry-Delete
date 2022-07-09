@@ -34,6 +34,7 @@ export class ConfigurationProvider {
     private workspaceListener: Disposable;
 
     // TODO: May be a better way to handle this
+    // they are called auto close pair in vscode configuration
     static coupleCharacters = [
         "()",
         "[]",
@@ -44,6 +45,73 @@ export class ConfigurationProvider {
         '""',
     ];
 
+    isEndCoupleCharacters(charB: string) {
+        if (charB === ")") {
+            return true;
+        }
+
+        if (charB === "]"){
+            return true;
+        }
+
+        if (charB === ">"){
+            return true;
+        }
+
+        if (charB === "}"){
+            return true;
+        }
+
+        if (charB === "'"){
+            return true;
+        }
+
+        if (charB === "`"){
+            return true;
+        }
+
+        if (charB === '"'){
+            return true;
+        }
+
+        return false;
+    }
+
+    isMatchOpenCoupleCharacters(charA: string, charB: string) {
+        if (charA === "(" && charB === ")") {
+            return true;
+        }
+
+        if (charA === "[" && charB === "]"){
+            return true;
+        }
+
+        if (charA === "<" && charB === ">"){
+            return true;
+        }
+
+        if (charA === "{" && charB === "}"){
+            return true;
+        }
+
+        if (charA === "'" && charB === "'"){
+            return true;
+        }
+
+        if (charA === "`" && charB === "`"){
+            return true;
+        }
+
+        if (charA === '"' && charB === '"'){
+            return true;
+        }
+
+        return false;
+    }
+
+    // TODO: May be a better way to handle this
+
+    // "C:\Users\jason\AppData\Local\Programs\Microsoft VS Code\resources\app\extensions\json\package.json"
     constructor(config?: HungryDeleteConfiguration) {
         this.config = config;
     }
@@ -191,4 +259,6 @@ export class ConfigurationProvider {
 
         return false;
     }
+
+    
 }

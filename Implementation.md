@@ -58,3 +58,11 @@ Example:
 After a few months I found out that the API actually [can retrieve the word pattern](https://code.visualstudio.com/docs/extensionAPI/vscode-api#_a-nameworkspaceconfigurationaspan-classcodeitem-id867workspaceconfigurationspan), I think the current implementation is acceptable and I am lazy to change it, but I am welcome with the pull request.
 
 - The word range is undefined when the cursor is placed at word separators
+
+## Research
+
+https://github.com/microsoft/vscode/blob/dce493cb6e36346ef2714e82c42ce14fc461b15c/src/vs/workbench/api/common/extHostDocumentData.ts#L217
+
+https://github.com/microsoft/vscode/blob/0a435fb5b173b2b793b3c54a5c3dfdf81b7caee5/src/vs/editor/common/cursor/cursorWordOperations.ts#L380
+
+https://github.com/microsoft/vscode/blob/0a435fb5b173b2b793b3c54a5c3dfdf81b7caee5/src/vs/editor/common/core/wordCharacterClassifier.ts#L15
