@@ -3,11 +3,16 @@
 All notable changes to the "Hungry Delete" extension will be documented in this file.
 
 
-##
+## [1.7.0] - 2022-07-10
+
+### Added
+
+- Better handling of hungry delete on line for special character such as ", less annoying when editing JSON file
+
 Breaking change:
+Setting: `followAbovelineIndent` is renamed into `followAboveLineIndent`
 
-followAboveLineIndent is renamed
-
+Note:
 Migrate vscode version to 1.69
 
 ## [1.6.0] - 2019-04-23
@@ -17,7 +22,6 @@ Migrate vscode version to 1.69
 - Consider increase indent pattern
 - Follow Above Line Indent
 - Keep One Space Exception
-
 
 ### Changed
 
